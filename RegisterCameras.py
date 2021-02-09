@@ -30,22 +30,4 @@ while True:
     if registered_cameras == max_cameras:
         break
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+sock.close()

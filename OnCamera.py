@@ -15,7 +15,7 @@ IS_ALL_GROUPS = False
 def get_ip_address():
    host = socket.gethostname()
    ipnum = subprocess.check_output(["hostname", "-I"]).decode("utf-8")
-   return ipnum
+   return ipnum.strip()
  
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -33,19 +33,21 @@ sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 # register this camera with server!  Want to make sure all camera's are online before taking pic.
 MESSAGE = bytes("REGISTER", "utf-8")
 sock.sendto(MESSAGE, (MCAST_GRP, MCAST_PORT))
+local_ip = get_ip_address()
 
 # Receive/respond loop
 try:
     while True:
-        print('\nwaiting to receive message')
+        print('\nwaiting for command...')
         data, address = sock.recvfrom(1024)
         data = data.decode('utf8')
+
         if data == "snap":
-            print("Taking Picture!")
-            cmd = 'raspistill -o /home/pi/camera/photo.jpg ' 
-            print(get_ip_address())
+            cmd = f'raspistill -o /home/pi/camera/{local_ip}_photo.jpg' 
+            subprocess.call(cmd, shell=True)
+            sock.sendto(b'TAKEN', address)
+            
         elif data == "reboot":
-            print("rebooting...")
             cmd = 'sudo reboot'
             pid = subprocess.call(cmd, shell=True)
 

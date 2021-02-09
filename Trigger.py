@@ -20,9 +20,20 @@ try:
     # Send data to the multicast group
     print('sending {!r}'.format(MESSAGE))
     sock.sendto(MESSAGE, (MCAST_GRP, MCAST_PORT))
+    print('waiting for ack...')
+    while True:
+        try:
+            data, server = sock.recvfrom(16)
+            data = data.decode('utf8')
+            if data == 'TAKEN':
+               print(f'Pic Taken by {server}')
+               
+        except socket.timeout:
+            print('timed out, no more responses')
+            break
 
 except:
-    print("Problem sending trigger!")    
+    print("Problem sending trigger!")
 
 finally:
     print('closing socket')
