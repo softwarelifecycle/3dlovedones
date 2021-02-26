@@ -28,6 +28,10 @@ try:
             if data == 'TAKEN':
                print(f'Pic Taken by {server}')
                
+            if data == 'FINISHED':
+                print('Finished Uploading!')
+                break
+
         except socket.timeout:
             print('timed out, no more responses')
             break
