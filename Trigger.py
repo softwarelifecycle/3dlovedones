@@ -23,10 +23,13 @@ try:
     print('waiting for ack...')
     while True:
         try:
-            data, server = sock.recvfrom(16)
+            data, server = sock.recvfrom(200)
             data = data.decode('utf8')
             if data == 'TAKEN':
                print(f'Pic Taken by {server}')
+
+            if data != 'TAKEN' and data != "FINISHED":
+               print(f'{data}')
                
             if data == 'FINISHED':
                 print('Finished Uploading!')
