@@ -3,15 +3,19 @@ import PySimpleGUI as sg
 def make_window(theme):
     sg.theme(theme)
 
-    main_layout = [[sg.Spin([i for i in range(1,100)], initial_value=10, k='-CAMERACOUNT-', size=(10,10)), sg.Text('# of Cameras')],
+    main_layout = [
+                  [sg.Frame(layout=[
+                  [sg.Text("# of Cameras")],
+                  [sg.Spin([i for i in range(1,100)], initial_value=10, k='-CAMERACOUNT-',size=(10,10))], 
                   [sg.Text("Server IP Address")],
-                  [sg.Input(key="IPAddress",size=(16,1))],
-                  [sg.Button('Update Camera Code')],
-                  [sg.Button('ReBoot Cameras')],
-                  [sg.Button('Take Pictures!')],
-                  [sg.Button('Delete Pics On Cameras')],
-                  [sg.Button("Picture Destination")],
-                  [sg.Button('Exit')]]
+                  [sg.Input(key="IPAddress",size=(16,2))]],title="Settings")],
+                  [sg.Frame(layout=[
+                  [sg.Button('Update Camera Code', size=(20,2))],
+                  [sg.Button('ReBoot Cameras',size=(20,2))],
+                  [sg.Button('Take Pictures!',size=(20,2))],
+                  [sg.Button('Delete Pics On Cameras',size=(20,2))],
+                  [sg.Button("Picture Destination",size=(20,2))],
+                  [sg.Button('Exit',size=(20,2))]],title="Actions")]]
 
     theme_layout = [[sg.Text("See how elements look under different themes by choosing a different theme here!")],
                     [sg.Listbox(values = sg.theme_list(), 
@@ -20,9 +24,9 @@ def make_window(theme):
                       enable_events = True)],
                       [sg.Button("Set Theme")]]
     
-    layout = [[sg.Text('3D Loved Ones Model Generator', size=(38, 1), justification='center', font=("Helvetica", 24), k='-TEXT HEADING-', enable_events=True)]]
+    layout = [[sg.Image(filename="3dTitle.png", key='image')]]
     layout +=[[sg.TabGroup([[  sg.Tab('Main', main_layout), 
-                               sg.Tab('Settings', theme_layout)
+                               sg.Tab('Theme', theme_layout)
                                ]], key='-TAB GROUP-', size=(1990, 790))]]
               
     return sg.Window('3D Loved Ones', layout, size=(1800, 800),location=(100,100), resizable=True)
