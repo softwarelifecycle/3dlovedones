@@ -7,12 +7,13 @@ Sits on laptop waiting to hear from camera's as they are powered up. Just used t
 
 #MCAST_GRP = '224.0.0.251'
 MCAST_PORT = 5007
+MULTICAST_TTL = 1
 
 registered_cameras = 0
 max_cameras = 2
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
 sock.bind(('', MCAST_PORT))
 
 print("\n Waiting for Camera's to Register!")

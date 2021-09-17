@@ -1,10 +1,7 @@
 import socket
 import struct
 import subprocess
-import fcntl
-import os
 import sys
-from pathlib import Path
 
 """
 Lives on the Raspberry Pi Zero.. is autostarted. 
@@ -15,12 +12,14 @@ are online!
 MCAST_GRP = '224.0.0.251'
 MCAST_PORT = 5007
 destinationFolder = "test"
-errorString=""
+errorString = ""
+
 
 def get_ip_address():
     host = socket.gethostname()
     ipnum = subprocess.check_output(["hostname", "-I"]).decode("utf-8")
     return ipnum.strip()
+
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -39,7 +38,6 @@ local_ip = get_ip_address()
 # Receive/respond loop
 try:
     while True:
-        print('\nwaiting for command...')
         data, address = sock.recvfrom(1024)
         data = data.decode('utf8')
 
@@ -48,24 +46,18 @@ try:
             subprocess.call(cmd, shell=True)
             sock.sendto(b'TAKEN', address)
 
-            file_path = f'/home/pi/camera/{local_ip}_photo.jpg'
-
-            copycmd = f'scp {file_path} hchattaway@192.168.0.112:/SSD500/Dropbox/Python/CommercialSites/3dlovedones/clients/{destinationFolder}/'
-            sock.sendto(copycmd.encode('utf8'), address)
-
-            sock.sendto("Running SCP!".encode('utf8'),address)                
-            copyProcess =  subprocess.Popen(["scp",f'/home/pi/camera/{local_ip}_photo.jpg',f'hchattaway@192.168.0.112:/SSD500/Dropbox/Python/CommercialSites/3dlovedones/clients/{destinationFolder}/'])
+            sock.sendto("Running SCP!".encode('utf8'), address)
+            copyProcess = subprocess.Popen(["scp", f'/home/pi/camera/{local_ip}_photo.jpg',
+                             f'hchattaway@192.168.0.112:/SSD500/Dropbox/Python/CommercialSites/3dlovedones/transfer/'])
             sts = copyProcess.wait()
             # send ack!
             sock.sendto(b'FINISHED', address)
-
         elif data == "reboot":
             cmd = 'sudo reboot'
             pid = subprocess.call(cmd, shell=True)
 
 except:
     errorString = sys.exc_info()[0]
-    sock.sendto(errorString.encode('utf8'),address)            
+    sock.sendto(errorString.encode('utf8'), address)
 finally:
-    print("Closing Socket")
     sock.close()
