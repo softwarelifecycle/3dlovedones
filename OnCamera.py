@@ -44,20 +44,21 @@ try:
         if data == "snap":
             cmd = f'raspistill -o /home/pi/camera/{local_ip}_photo.jpg'
             subprocess.call(cmd, shell=True)
-            sock.sendto(b'TAKEN', address)
+            sock.sendto('TAKEN'.encode('utf8'), address)
 
             sock.sendto("Running SCP!".encode('utf8'), address)
             copyProcess = subprocess.Popen(["scp", f'/home/pi/camera/{local_ip}_photo.jpg',
                              f'hchattaway@192.168.0.112:/SSD500/Dropbox/Python/CommercialSites/3dlovedones/transfer/'])
             sts = copyProcess.wait()
             # send ack!
-            sock.sendto(b'FINISHED', address)
+            sock.sendto('FINISHED'.encode('utf8'), address)
         elif data == "reboot":
             cmd = 'sudo reboot'
             pid = subprocess.call(cmd, shell=True)
+        elif data == "ping":
+            sock.sendto("PINGED".encode('utf8'), address)
 
 except:
     errorString = sys.exc_info()[0]
-    sock.sendto(errorString.encode('utf8'), address)
 finally:
     sock.close()

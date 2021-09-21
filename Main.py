@@ -4,10 +4,18 @@ import subprocess
 import utilities
 import os
 import glob
+import TriggerCameras
 
-DATA = [[j for j in range(5)] for i in range(10)]
+cameras = [[1, "192.168.0.106", "192.168.0.106_image.jpg"]]
+cameras.append([2, "192.168.0.107", "192.168.0.107_image.jpg"])
+cameras.append([3, "192.168.0.108", "192.168.0.108_image.jpg"])
+cameras.append([4, "192.168.0.109", "192.168.0.109_image.jpg"])
+print(f"Cameras = {cameras}")
+
 DESTINATION_PATH = ""
 HOME = "/SSD500/Dropbox/Python/CommercialSites/3dlovedones/"
+MCAST_GRP = '224.0.0.251'
+MCAST_PORT = 5007
 
 def make_window(theme):
     """"
@@ -15,7 +23,8 @@ def make_window(theme):
     """
     sg.theme(sg.OFFICIAL_PYSIMPLEGUI_THEME)
 
-    headings = [["Camera #"], ["IP Address"], ["Picture Taken"], ["Uploaded"], ["Image"]]
+    headings = [["Camera #"], ["IP Address"], ["Image"]]
+
     # layout in columns
     main_tab_left_column = [
         [sg.Frame(layout=[
@@ -23,24 +32,26 @@ def make_window(theme):
             [sg.Spin([i for i in range(1, 100)], initial_value=10, k='-CAMERACOUNT-', size=(10, 10))],
             [sg.Text("Server IP Address")],
             [sg.Input(key="-IPADDRESS-", size=(15, 2))],
-            [sg.Text("Destination", font='Rasa 12')] ,
-            [sg.Input(key='-DESTTEXT-', size='20', default_text='Select Folder...', expand_x=True), sg.FolderBrowse(key="-DESTINATION-", target='-DESTTEXT-')]],
+            [sg.Text("Destination", font='Rasa 12')],
+            [sg.Input(key='-DESTTEXT-', size='20', default_text='Select Folder...', expand_x=True),
+             sg.FolderBrowse(key="-DESTINATION-", target='-DESTTEXT-')]],
             title="Settings", expand_x=True, pad=(10, 5))],
         [sg.Frame(layout=[
             [sg.Button('Update Camera Code', key="-UPDATECODE-", font='Rasa 12', size=20)],
-            [sg.Button('ReBoot Cameras', key="-REBOOT-", font='Rasa 12', size=20)],
+            [sg.Button('ReBoot Cameras', key="-REBOOT-", font='Rasa 12', size=20)], \
+            [sg.Button('Ping Cameras', key="-PING-", font='Rasa 12', size=20)],
+            [sg.Button('Delete Transfer Folder Pics', key="-DELETETRANSFERFOLDER-", font='Rasa 12', size=20)],
             [sg.Button('Take Pictures!', key="-SNAP-", font='Rasa 12', size=20)],
             [sg.Button('Delete Pics On Cameras', key="-DELETECAMERAPICS-", font='Rasa 12', size=20)],
-            [sg.Button('Delete Transfer Folder Pics', key="-DELETETRANSFERFOLDER-", font='Rasa 12', size=20)],
             [sg.Button('Exit', font='Rasa 12', size=20)]], title="Actions", expand_x=True, pad=(10, 5))]]
 
-    main_tab_right_column = [[sg.Table(values=DATA, headings=headings, max_col_width=25,
+    main_tab_right_column = [[sg.Table(values=cameras, headings=headings, max_col_width=25,
                                        # background_color='light blue',
                                        justification='right',
-                                       num_rows=20,
-                                       def_col_width=30,
+                                       num_rows=4,
+                                       auto_size_columns=True,
                                        expand_x=True,
-                                       alternating_row_color='lightyellow',
+                                       alternating_row_color='gray',
                                        key='-CAMERATABLE-',
                                        row_height=35,
                                        tooltip='Camera Listing')]]
@@ -55,11 +66,12 @@ def make_window(theme):
                                 enable_events=True)],
                     [sg.Button("Set Theme")]]
 
-    layout = [[sg.Text('3D Loved Ones Model Generator', font='Rasa 40', justification='center', expand_x=True, relief="raised")]]
+    layout = [[sg.Text('3D Loved Ones Model Generator', font='Rasa 40', justification='center', expand_x=True,
+                       relief="raised")]]
     # layout = [[sg.Image(filename="3dTitle.png", key='image')]]
     layout += [[sg.TabGroup([[sg.Tab('Main', tab_layout), sg.Tab('Theme', theme_layout)]], key='-TAB GROUP-',
                             size=(1990, 790))]]
-    return sg.Window('3D Loved Ones', layout, size=(1800, 800), location=(100, 100), resizable=True, finalize=True)
+    return sg.Window('3D Loved Ones', layout, size=(1600, 800), location=(100, 100), resizable=True, finalize=True)
 
 
 def updatecode():
@@ -68,7 +80,8 @@ def updatecode():
     """
     camera_ip = "192.168.0.106"
 
-    copyCameraCode = subprocess.Popen(["scp", '/SSD500/Dropbox/Python/CommercialSites/3dlovedones/OnCamera.py',  f'pi@{camera_ip}:/home/pi/listener/'])
+    copyCameraCode = subprocess.Popen(
+        ["scp", '/SSD500/Dropbox/Python/CommercialSites/3dlovedones/OnCamera.py', f'pi@{camera_ip}:/home/pi/listener/'])
     returncode = copyCameraCode.wait()
     print(f"return code: {returncode}")
 
@@ -78,12 +91,19 @@ def updatecode():
         sg.popup("Transfer completed!")
 
 
-def rebootcamera():
+def rebootcameras():
     """
     reboot all registered cameras.. Usually done after calling the "UpdateCode" method 
     """
+    rebootCamera = subprocess.Popen(
+        ["ssh", 'sudo reboot', f'pi@{camera_ip}'])
+    returncode = rebootcamera.wait()
+    print(f"return code: {returncode}")
+
     print("Clicked Reboot")
 
+def pingcameras():
+    TriggerCameras.ping(MCAST_GRP, MCAST_PORT)
 
 def snap(destination_path):
     """
@@ -92,20 +112,22 @@ def snap(destination_path):
     print(f"Destination Path={destination_path}")
     if len(destination_path.strip()) == 0:
         sg.popup('Supply File Destination!')
+    else:
+        TriggerCameras.snap(MCAST_GRP,  MCAST_PORT)
 
-    print("Clicked Snap!")
-
-def  deletetransferpics(home):
+def deletetransferpics(home):
     print(f"Home: {home}")
     for f in glob.glob("transfer/*.jpg"):
         print(f"File: {f}")
         os.remove(f)
+
 
 def deletecamerapics():
     """
     Delete the pics on all registered cameras.
     """
     print("Clicked Delete Camera pics")
+
 
 def main():
     """
@@ -145,7 +167,7 @@ def main():
         elif event == "-UPDATECODE-":
             updatecode()
         elif event == "-REBOOT-":
-            rebootcamera()
+            rebootcameras()
         elif event == "-SNAP-":
             DESTINATION_PATH = values['-DESTINATION-']
             snap(DESTINATION_PATH)
@@ -153,11 +175,12 @@ def main():
             deletecamerapics()
         elif event == '-DELETETRANSFERFOLDER-':
             deletetransferpics(HOME)
-
-
+        elif event == "-PING-":
+            pingcameras()
 
     window.close()
     exit(0)
+
 
 if __name__ == '__main__':
     main()
