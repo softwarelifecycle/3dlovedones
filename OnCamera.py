@@ -42,18 +42,19 @@ try:
         data = data.decode('utf8')
 
         if data == "snap":
-            cmd = f'raspistill -o /home/pi/camera/{local_ip}_photo.jpg'
+            cmd = f'raspistill -ISO 100 -sa 30 -co 20  -o /home/pi/camera/{local_ip}_photo.jpg'
             subprocess.call(cmd, shell=True)
             sock.sendto('TAKEN'.encode('utf8'), address)
 
             sock.sendto("Running SCP!".encode('utf8'), address)
             copyProcess = subprocess.Popen(["scp", f'/home/pi/camera/{local_ip}_photo.jpg',
-                             f'hchattaway@192.168.0.112:/SSD500/Dropbox/Python/CommercialSites/3dlovedones/transfer/'])
+                                            f'hchattaway@192.168.0.112:/SSD500/Dropbox/Python/CommercialSites/3dlovedones/transfer/'])
             sts = copyProcess.wait()
             # send ack!
             sock.sendto('FINISHED'.encode('utf8'), address)
         elif data == "reboot":
-            cmd = 'sudo reboot'
+            sock.sendto('Restarting Service!'.encode('utf8'), address)
+            cmd = 'sudo systemctl restart OnCamera.service'
             pid = subprocess.call(cmd, shell=True)
         elif data == "ping":
             sock.sendto("PINGED".encode('utf8'), address)
