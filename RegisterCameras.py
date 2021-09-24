@@ -10,9 +10,6 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
 sock.bind((MCAST_GRP, MCAST_PORT))
 
-print("\n Waiting for Camera's to Register!")
-
-
 def registercameras(max_cameras, window):
     """
     Listen for cameras to broadcast that they booted up...

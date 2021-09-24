@@ -1,6 +1,8 @@
 import PySimpleGUI as sg
 import socket
 import subprocess
+
+import UtilityFunctions
 import utilities
 import os
 import glob
@@ -11,14 +13,11 @@ import shutil
 import threading
 import time
 
-
-cameras = [[1, "192.168.0.106", "192.168.0.106_image.jpg"]]
-cameras.append([2, "192.168.0.107", "192.168.0.107_image.jpg"])
-cameras.append([3, "192.168.0.108", "192.168.0.108_image.jpg"])
-cameras.append([4, "192.168.0.109", "192.168.0.109_image.jpg"])
-
+cameras = [[0, "", ""]]
 DESTINATION_PATH = ""
 HOME = "/SSD500/Dropbox/Python/CommercialSites/3dlovedones/"
+TRANSFER =  "/SSD500/Dropbox/Python/CommercialSites/3dlovedones/transfer/"
+
 MCAST_GRP = '224.0.0.251'
 MCAST_PORT = 5007
 
@@ -48,7 +47,6 @@ def make_window(theme):
             [sg.Button('Ping Cameras', key="-PING-", font='Rasa 12', size=20)],
             [sg.Button('Delete Transfer Folder Pics', key="-DELETETRANSFERFOLDER-", font='Rasa 12', size=20)],
             [sg.Button('Take Pictures!', key="-SNAP-", font='Rasa 12', size=20)],
-            [sg.Button('Delete Pics On Cameras', key="-DELETECAMERAPICS-", font='Rasa 12', size=20)],
             [sg.Button('Exit', font='Rasa 12', size=20)]], title="Actions", expand_x=True, pad=(10, 5))]]
 
     main_tab_right_column = [[sg.Table(values=cameras, headings=headings, max_col_width=25,
@@ -110,21 +108,15 @@ def snap(destination_path, window):
         thread = threading.Thread(target=TriggerCameras.snap, args=(MCAST_GRP, MCAST_PORT, window),
                                   daemon=True)
         thread.start()
+        print('Thread has exited!')
 
 
 def deletetransferpics(home):
-    print(f"Home: {home}")
-    for f in glob.glob("transfer/*.jpg"):
-        print(f"File: {f}")
+    """
+    cleanup transfer directory either via menu option or when pics are taken.
+    """
+    for f in glob.glob(f"{TRANSFER}*.jpg"):
         os.remove(f)
-
-
-def deletecamerapics():
-    """
-    Delete the pics on all registered cameras.
-    """
-    print("Clicked Delete Camera pics")
-
 
 def main():
     """
@@ -165,17 +157,24 @@ def main():
         elif event == "-REBOOT-":
             TriggerCameras.rebootcameras(MCAST_GRP, MCAST_PORT)
         elif event == "-SNAP-":
+            # clean up transfer folder first!
+            deletetransferpics(HOME)
+            window['-STATUSTEXT-'].update('Starting to take pictures...')
             DESTINATION_PATH = values['-DESTINATION-']
             cameras.clear()
             window['-CAMERATABLE-'].update(cameras)
             snap(DESTINATION_PATH, window)
         elif event == "-PICTURETAKEN-":
+            print("Picture Taken event!")
             window['-STATUSTEXT-'].update(f'Just took   {values["-PICTURETAKEN-"][0]} pictures!')
             cameras.append([values["-PICTURETAKEN-"][0], values["-PICTURETAKEN-"][1], values["-PICTURETAKEN-"][2]])
             window['-CAMERATABLE-'].update(cameras)
 
-        elif event == "-DELETECAMERAPICS-":
-            deletecamerapics()
+            # if all pics have been taken, move them to client folder.
+            if values["-PICTURETAKEN-"][0] == int( values["-CAMERACOUNT-"]):
+                   numcopied =   UtilityFunctions.copyfiles(TRANSFER, os.path.join(DESTINATION_PATH, ''))
+                   window['-STATUSTEXT-'].update(f'Just copied {numcopied}  pictures! DONE!')
+
         elif event == '-DELETETRANSFERFOLDER-':
             deletetransferpics(HOME)
         elif event == "-PING-":

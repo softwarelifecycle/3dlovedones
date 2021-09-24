@@ -1,23 +1,9 @@
 # Multicast sender
 # Guidance:  https://stackoverflow.com/a/1794373
-import socket
 import UtilityFunctions
 
-
-def getsocket():
-    # regarding socket.IP_MULTICAST_TTL
-    # ---------------------------------
-    # for all packets sent, after two hops on the network the packet will not
-    # be re-sent/broadcast (see https://www.tldp.org/HOWTO/Multicast-HOWTO-6.html)
-    MULTICAST_TTL = 1
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
-    return sock
-
-
 def rebootcameras(mcast_grp, mcast_port):
-    sock = getsocket()
+    sock = UtilityFunctions. getsocket()
     message = b'reboot'
     sock.sendto(message, (mcast_grp, mcast_port))
     sock.close()
@@ -27,7 +13,7 @@ def ping(mcast_grp, mcast_port):
     """
     Just ping cameras via multicast and get response.
     """
-    sock = getsocket()
+    sock = UtilityFunctions. getsocket()
     message = b'ping'
     server = ""
     numcameras = 0
@@ -45,7 +31,7 @@ def ping(mcast_grp, mcast_port):
                     numcameras += 1
                     break
 
-            except socket.timeout:
+            except sock.timeout:
                 print('timed out, no more responses')
                 break
     except:
@@ -62,15 +48,14 @@ def snap(mcast_grp, mcast_port, window):
     """
     Send the "snap" keyword via multicast and wait for responses.... This will add each response to the cameras list.
     """
-    sock = getsocket()
+    sock = UtilityFunctions. getsocket()
     message = b'snap'
     server = ""
     numcameras = 0
     try:
         # Send data to the multicast group
-        print('sending {!r}'.format(message))
         sock.sendto(message, (mcast_grp, mcast_port))
-        print('waiting for snap  ack...')
+        print('sent snap command,   waiting for snap  ack...')
         while True:
             try:
                 data, server = sock.recvfrom(200)
@@ -87,7 +72,7 @@ def snap(mcast_grp, mcast_port, window):
                     window.write_event_value('-PICTURETAKEN-', (numcameras, server[0], f"{server[0]}_photo.jpg"))
                     break
 
-            except socket.timeout:
+            except sock.timeout:
                 print('timed out, no more responses')
                 break
 
