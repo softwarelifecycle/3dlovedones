@@ -44,7 +44,7 @@ def ping(mcast_grp, mcast_port):
     return numcameras
 
 
-def snap(mcast_grp, mcast_port, window):
+def snap(mcast_grp, mcast_port, window, max_cameras):
     """
     Send the "snap" keyword via multicast and wait for responses.... This will add each response to the cameras list.
     """
@@ -70,7 +70,9 @@ def snap(mcast_grp, mcast_port, window):
                 if data == 'FINISHED':
                     numcameras += 1
                     window.write_event_value('-PICTURETAKEN-', (numcameras, server[0], f"{server[0]}_photo.jpg"))
-                    break
+
+                    if numcameras == max_cameras:
+                        break
 
             except sock.timeout:
                 print('timed out, no more responses')

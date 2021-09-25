@@ -17,12 +17,13 @@ def registercameras(max_cameras, window):
     registered_cameras = 0
     # Receive/respond loop
     while True:
-        data, address = sock.recvfrom(1024)
+        data, camaddress = sock.recvfrom(1024)
         data = data.decode('utf8')
         if data == 'REGISTER':
             registered_cameras += 1
             window['-STATUSTEXT-'].update( f"Registered {registered_cameras} Cameras!")
             print(f"Registered {registered_cameras} cameras!")
+            window.write_event_value('-CAMERAREGISTERED-', (registered_cameras, camaddress[0], ""))
 
         if registered_cameras == max_cameras:
             break
