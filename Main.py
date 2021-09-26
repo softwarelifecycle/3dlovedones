@@ -1,7 +1,7 @@
+import io
 import PySimpleGUI as sg
 import socket
 import subprocess
-
 import UtilityFunctions
 import utilities
 import os
@@ -12,8 +12,10 @@ from pathlib import Path
 import shutil
 import threading
 import time
+from PIL import Image
 
 cameras = [[0, "", ""]]
+
 DESTINATION_PATH = ""
 HOME = "/SSD500/Dropbox/Python/CommercialSites/3dlovedones/"
 TRANSFER =  "/SSD500/Dropbox/Python/CommercialSites/3dlovedones/transfer/"
@@ -27,7 +29,7 @@ def make_window(theme):
     """
     sg.theme(sg.OFFICIAL_PYSIMPLEGUI_THEME)
 
-    headings = [["Camera #"], ["IP Address"], ["Image"]]
+    headings = ["Camera #", "IP Address", "Image"]
 
     # layout in columns
     main_tab_left_column = [
@@ -58,11 +60,15 @@ def make_window(theme):
                                        alternating_row_color='gray',
                                        key='-CAMERATABLE-',
                                        row_height=35,
+                                       enable_events=True,
                                        tooltip='Camera Listing')],
                             [ sg.Text(text="Status:", font='Rasa 22  bold', justification="bottom"),  sg.Text(key='-STATUSTEXT-', font='Rasa 18 bold')]]
 
+    picture_column = [ [sg.Frame(layout=[
+              [sg.Image(key="-CAMERAIMAGE-")]], title="Camera Image",  pad=(10, 5))]]
+
     tab_layout = [[sg.Col(main_tab_left_column, vertical_alignment='top', pad=(0, 0)),
-                   sg.Col(main_tab_right_column, vertical_alignment='top', expand_x=True, expand_y=True)]]
+                   sg.Col(main_tab_right_column, vertical_alignment='top', expand_x=True, expand_y=True), sg.Col(picture_column, vertical_alignment='top', expand_y=True, expand_x=True, pad=(10,5))]]
 
     theme_layout = [[sg.Text("See how elements look under different themes by choosing a different theme here!")],
                     [sg.Listbox(values=sg.theme_list(),
@@ -197,9 +203,22 @@ def main():
             cameras.append([values["-CAMERAREGISTERED-"][0], values["-CAMERAREGISTERED-"][1], ""])
             window['-CAMERATABLE-'].update(cameras)
 
+        elif event == "-CAMERATABLE-":
+            # retrieve selected row #
+            row  = values["-CAMERATABLE-"][0]
+
+            # then get that row from the cameras collection and grab the 3rd column for the picture name!
+            jpg  = cameras[row][2]
+
+            fullimagepath =f"{ DESTINATION_PATH}/{jpg}"
+            image = Image.open(fullimagepath)
+            image.thumbnail((400, 400))
+            bio = io.BytesIO()
+            image.save(bio, format="PNG")
+            window["-CAMERAIMAGE-"].update(data=bio.getvalue())
+
     window.close()
     exit(0)
-
 
 if __name__ == '__main__':
     main()
