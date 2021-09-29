@@ -1,6 +1,7 @@
 # Multicast sender
 # Guidance:  https://stackoverflow.com/a/1794373
 import UtilityFunctions
+import time
 
 def rebootcameras(mcast_grp, mcast_port):
     sock = UtilityFunctions. getsocket()
@@ -9,7 +10,7 @@ def rebootcameras(mcast_grp, mcast_port):
     sock.close()
 
 
-def ping(mcast_grp, mcast_port):
+def ping(mcast_grp, mcast_port, max_cameras, window):
     """
     Just ping cameras via multicast and get response.
     """
@@ -19,16 +20,23 @@ def ping(mcast_grp, mcast_port):
     numcameras = 0
     try:
         print('sending {!r}'.format(message))
+        start = time.time()
         sock.sendto(message, (mcast_grp, mcast_port))
         print('waiting for ping ack...')
         while True:
             try:
-                data, server = sock.recvfrom(200)
+                print("Waiting on recvfrom...")
+                data, camaddress = sock.recvfrom(200)
                 data = data.decode('utf8')
                 print(f'Ping Data Returned: {data}')
+                print(time.time() - start)
+
                 if data == 'PINGED':
-                    print(f'PINGED! by {server[0]}')
+                    print(f'PINGED! by {camaddress[0]}')
                     numcameras += 1
+                    window.write_event_value('-CAMERAPINGED-', (numcameras, camaddress[0], ""))
+
+                if numcameras == max_cameras:
                     break
 
             except sock.timeout:
