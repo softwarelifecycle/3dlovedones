@@ -44,7 +44,9 @@ def make_window(theme):
         [sg.Frame(layout=[
             [sg.Button('Update Camera Code', key="-UPDATECODE-", font='Rasa 12', size=20)],
             [sg.Button('Register Cameras', key="-REGISTER-", font='Rasa 12', size=20)],
-            [sg.Button('ReBoot Cameras', key="-REBOOT-", font='Rasa 12', size=20)],
+            [sg.Button('ReStart  Cameras Service', key="-RESTART-", font='Rasa 12', size=20)],
+            [sg.Button('ReBoot  Cameras', key="-REBOOT-", font='Rasa 12', size=20)],
+            [sg.Button('Shut Down  Cameras', key="-SHUTDOWN-", font='Rasa 12', size=20)],
             [sg.Button('Ping Cameras', key="-PING-", font='Rasa 12', size=20)],
             [sg.Button('Delete Transfer Folder Pics', key="-DELETETRANSFERFOLDER-", font='Rasa 12', size=20)],
             [sg.Button('Take Pictures!', key="-SNAP-", font='Rasa 12', size=20)],
@@ -65,7 +67,7 @@ def make_window(theme):
                             [ sg.Text(text="Status:", font='Rasa 22  bold', justification="bottom"),  sg.Text(key='-STATUSTEXT-', font='Rasa 18 bold')]]
 
     picture_column = [ [sg.Frame(layout=[
-              [sg.Image(key="-CAMERAIMAGE-")]], title="Camera Image",  pad=(0, 0), size=(600,600) )]]
+              [sg.Image(key="-CAMERAIMAGE-")], [sg.Button('Re-Take Picture', key='-RETAKE-', font='Rasa 12', size=20)]], title="Camera Image",  pad=(0, 0), size=(600,600) )]]
 
     tab_layout = [[sg.Col(main_tab_left_column, vertical_alignment='top', pad=(0, 0)),
                    sg.Col(main_tab_right_column, vertical_alignment='top', expand_x=True, expand_y=True), sg.Col(picture_column, vertical_alignment='top', expand_y=True, expand_x=True, pad=(0,0), size=(600,600))]]
@@ -84,11 +86,11 @@ def make_window(theme):
                             size=(1990, 790))]]
     return sg.Window('3D Loved Ones', layout, size=(1600, 800), location=(100, 100), resizable=True, finalize=True)
 
-
-def updatecode(window):
+def shutdowncameras(window):
     """
-    Copy the OnCamera.py file to the registered cameras
+    Shut down camera completely.
     """
+    clearCameras("Updating Code!", window)
 
     for camera in cameras:
         camera_ip = camera[1]
@@ -97,28 +99,46 @@ def updatecode(window):
         returncode = copyCameraCode.wait()
 
         if returncode != 0:
-            sg.popup_error("Transfer did not complete!")
+            sg.popup_error("Error shutting down camera!")
         else:
-            window['-STATUSTEXT-'].update(f'Transfer complete for {camera_ip} .')
+            window['-STATUSTEXT-'].update(f'Camera  {camera_ip} shut down! .')
+
+
+def updatecode(window):
+    """
+    Copy the OnCamera.py file to the registered cameras
+    """
+
+    for camera in cameras:
+        camera_ip = camera[1]
+        print(f'Updating Camera {camera_ip} with new code!')
+        window['-STATUSTEXT-'].update(f'Transfering  for {camera_ip} .')
+        copyCameraCode = subprocess.Popen(
+            ["scp", '/SSD500/Dropbox/Python/CommercialSites/3dlovedones/OnCamera.py', f'pi@{camera_ip}:/home/pi/listener/'])
+        returncode = copyCameraCode.wait()
+
+        if returncode != 0:
+            sg.popup_error(f"Transfer did not complete for  {camera_ip}!")
 
     window['-STATUSTEXT-'].update(f'Restarting Services!.')
-    TriggerCameras.rebootcameras(MCAST_GRP, MCAST_PORT)
 
 
-def snap(destination_path, window, max_cameras):
+def snap(destination_path, window, max_cameras, cameraip = ''):
     """
     Send the SNAP command to the camera's to take a pic and then upload.
     """
     # clean up transfer folder first!
     deletetransferpics(HOME)
     window['-STATUSTEXT-'].update('Starting to take pictures...')
-    cameras.clear()
+    print(f'CameraIP in Snap:{cameraip}')
+    if len(cameraip)  ==  0:
+        cameras.clear()
     window['-CAMERATABLE-'].update(cameras)
 
     if len(destination_path.strip()) == 0:
         sg.popup('Supply File Destination!')
     else:
-        thread = threading.Thread(target=TriggerCameras.snap, args=(MCAST_GRP, MCAST_PORT, window, max_cameras),  daemon=True)
+        thread = threading.Thread(target=TriggerCameras.snap, args=(MCAST_GRP, MCAST_PORT, window, max_cameras, cameraip),  daemon=True)
         thread.start()
 
 
@@ -179,13 +199,32 @@ def main():
         elif event == "-UPDATECODE-":
             updatecode(window)
 
+        elif event == "-RESTART-":
+            clearCameras("ReStarting  Camera Service!", window)
+            TriggerCameras.restartcameras(MCAST_GRP, MCAST_PORT)
+            #ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']))
+
         elif event == "-REBOOT-":
             clearCameras("Starting to Reboot Cameras!", window)
             TriggerCameras.rebootcameras(MCAST_GRP, MCAST_PORT)
             ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']))
 
+        elif event == "-SHUTDOWN-":
+            clearCameras("Shutting Down Cameras!", window)
+            TriggerCameras.shutdowncameras(MCAST_GRP, MCAST_PORT)
+
         elif event == "-SNAP-":
             snap( values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']))
+
+        elif event == "-RETAKE-":
+
+            # selected row
+            row = values["-CAMERATABLE-"][0]
+
+            # then get that row from the cameras collection and grab the 2nd column for the camera IP!
+            cameraip =  cameras[row][1]
+            print(f'Camera IP: {cameraip}')
+            snap( values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']), cameraip)
 
         elif event == "-PICTURETAKEN-":
             window['-STATUSTEXT-'].update(f'Just took   {values["-PICTURETAKEN-"][0]} pictures out of {values["-CAMERACOUNT-"]}!')
@@ -195,10 +234,8 @@ def main():
             # if all pics have been taken, move them to client folder.
             print(TRANSFER)
             print(f"Destination folder: {values['-DESTINATION-']}")
-
-            if values["-PICTURETAKEN-"][0] == int( values["-CAMERACOUNT-"]):
-                   numcopied =   UtilityFunctions.copyfiles(TRANSFER, os.path.join(values["-DESTINATION-"], ''))
-                   window['-STATUSTEXT-'].update(f'Just copied {numcopied}  pictures! DONE!')
+            numcopied =   UtilityFunctions.copyfiles(TRANSFER, os.path.join(values["-DESTINATION-"], ''))
+            window['-STATUSTEXT-'].update(f'Just copied {numcopied}  pictures! DONE!')
 
         elif event == '-DELETETRANSFERFOLDER-':
             deletetransferpics(HOME)
