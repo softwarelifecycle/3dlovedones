@@ -1,0 +1,11 @@
+#!/bin/bash
+ ssh pi@192.168.0.100 'sudo shutdown -r now'
+ ssh pi@192.168.0.117 ' sudo shutdown -r now'
+ ssh pi@192.168.0.106 'sudo shutdown -r now'
+ ssh pi@192.168.0.114 'sudo shutdown -r now'
+ ssh pi@192.168.0.115 'sudo shutdown -r now'
+ ssh pi@192.168.0.113 'sudo shutdown -r now'
+ ssh pi@192.168.0.110 'sudo shutdown -r now'
+ ssh pi@192.168.0.101 'sudo shutdown -r now'
+ ssh pi@192.168.0.116 'sudo shutdown -r now'
+ ssh pi@192.168.0.108 'sudo shutdown -r now'

@@ -3,7 +3,6 @@
 import UtilityFunctions
 import time
 
-
 def restartcameras(mcast_grp, mcast_port):
     sock = UtilityFunctions.getsocket()
     message = b'restart'
@@ -17,6 +16,7 @@ def rebootcameras(mcast_grp, mcast_port):
     sock.sendto(message, (mcast_grp, mcast_port))
     sock.close()
 
+
 def shutdowncameras(mcast_grp, mcast_port):
     sock = UtilityFunctions.getsocket()
     message = b'shutdown'
@@ -29,19 +29,18 @@ def ping(mcast_grp, mcast_port, max_cameras, window):
     Just ping cameras via multicast and get response.
     """
     sock = UtilityFunctions.getsocket()
-    message = b'ping'
-    server = ""
+    message = "ping:0"
     numcameras = 0
     try:
         print('sending {!r}'.format(message))
         start = time.time()
-        sock.sendto(message, (mcast_grp, mcast_port))
+        sock.sendto(message.encode("UTF-8"), (mcast_grp, mcast_port))
         print('waiting for ping ack...')
         while True:
             try:
                 print("Waiting on recvfrom...")
                 data, camaddress = sock.recvfrom(200)
-                data = data.decode('utf-8')
+                data = data.decode('UTF-8')
                 print(f'Ping Data Returned: {data}')
                 print(time.time() - start)
 
@@ -56,8 +55,8 @@ def ping(mcast_grp, mcast_port, max_cameras, window):
             except sock.timeout:
                 print('timed out, no more responses')
                 break
-    except:
-        print("Problem sending trigger!")
+    except Exception as ex:
+        print(f"Problem sending trigger! {ex}")
 
     finally:
         print('closing socket')
@@ -66,21 +65,23 @@ def ping(mcast_grp, mcast_port, max_cameras, window):
     return numcameras
 
 
-def snap(mcast_grp, mcast_port, window, max_cameras, cameraip = ''):
+def snap(mcast_grp, mcast_port, window, max_cameras, cameraip='', exposure=90):
     """
     Send the "snap" keyword via multicast and wait for responses.... This will add each response to the cameras list.
     """
     sock = UtilityFunctions.getsocket()
-    if len(cameraip) != 0:
-        message = cameraip.encode('utf-8')
-    else:
-        message = b'snap'
 
-    server = ""
-    numcameras = 0
+    # exposure passed in is  the fractional portion... for the camera, it's measured in MICROSECONDS.. so divide 1,000,000 by the denominator in seconds representation of the exposure!
+    exp_ms = int(1000000 / exposure)
+    if len(cameraip) != 0:
+        message = f'{cameraip}:{exp_ms}'
+    else:
+        message = f'snap: {exp_ms}'
+
+        numcameras = 0
     try:
         # Send data to the multicast group
-        sock.sendto(message, (mcast_grp, mcast_port))
+        sock.sendto(message.encode("UTF-8"), (mcast_grp, mcast_port))
         print(f'sent snap command {message},   waiting for snap  ack...')
         while True:
             try:
@@ -95,7 +96,8 @@ def snap(mcast_grp, mcast_port, window, max_cameras, cameraip = ''):
 
                 if data == 'FINISHED':
                     numcameras += 1
-                    window.write_event_value('-PICTURETAKEN-', (numcameras, server[0], f"{server[0]}_photo.jpg"))
+                    window.write_event_value('-PICTURETAKEN-',
+                                             (numcameras, server[0], f"{server[0]}_photo.jpg", cameraip))
 
                     if numcameras == max_cameras:
                         break
@@ -104,8 +106,8 @@ def snap(mcast_grp, mcast_port, window, max_cameras, cameraip = ''):
                 print('timed out, no more responses')
                 break
 
-    except:
-        print("Problem sending trigger!")
+    except Exception as ex:
+        print(f"Problem sending trigger: {ex}")
 
     finally:
         print('closing socket')

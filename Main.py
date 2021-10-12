@@ -3,7 +3,6 @@ import PySimpleGUI as sg
 import socket
 import subprocess
 import UtilityFunctions
-import utilities
 import os
 import glob
 import TriggerCameras
@@ -13,6 +12,7 @@ import shutil
 import threading
 import time
 from PIL import Image
+
 
 cameras = [[0, "", ""]]
 
@@ -37,6 +37,8 @@ def make_window(theme):
             [sg.Spin([i for i in range(1, 100)], initial_value=10, k='-CAMERACOUNT-', size=(10, 10))],
             [sg.Text("Server IP Address")],
             [sg.Input(key="-IPADDRESS-",  size=(15, 2))],
+            [sg.Text("Exposure Setting")],
+            [sg.Input(key="-EXPOSURE-", size=(15, 2))],
             [sg.Text("Destination", font='Rasa 12')],
             [sg.Input(key='-DESTTEXT-', size='20', default_text='Select Folder...', expand_x=True),
              sg.FolderBrowse(key="-DESTINATION-", target='-DESTTEXT-')]],
@@ -84,7 +86,7 @@ def make_window(theme):
 
     layout += [[sg.TabGroup([[sg.Tab('Main', tab_layout), sg.Tab('Theme', theme_layout)]], key='-TAB GROUP-',
                             size=(1990, 790))]]
-    return sg.Window('3D Loved Ones', layout, size=(1600, 800), location=(100, 100), resizable=True, finalize=True)
+    return sg.Window('3D Loved Ones', layout, size=(1600, 900), location=(100, 100), resizable=True, finalize=True)
 
 def shutdowncameras(window):
     """
@@ -123,7 +125,7 @@ def updatecode(window):
     window['-STATUSTEXT-'].update(f'Restarting Services!.')
 
 
-def snap(destination_path, window, max_cameras, cameraip = ''):
+def snap(destination_path, window, max_cameras, cameraip = '', exposure = 90):
     """
     Send the SNAP command to the camera's to take a pic and then upload.
     """
@@ -138,8 +140,9 @@ def snap(destination_path, window, max_cameras, cameraip = ''):
     if len(destination_path.strip()) == 0:
         sg.popup('Supply File Destination!')
     else:
-        thread = threading.Thread(target=TriggerCameras.snap, args=(MCAST_GRP, MCAST_PORT, window, max_cameras, cameraip),  daemon=True)
+        thread = threading.Thread(target=TriggerCameras.snap, args=(MCAST_GRP, MCAST_PORT, window, max_cameras, cameraip, exposure),  daemon=True)
         thread.start()
+        #TriggerCameras.snap(MCAST_GRP, MCAST_PORT, window, max_cameras, cameraip)
 
 
 def deletetransferpics(home):
@@ -166,8 +169,9 @@ def main():
     Entry point for creating view
     """
     window = make_window(sg.theme("Light Blue 2"))
-    SERVER_IP = utilities.get_ip_address()
+    SERVER_IP = UtilityFunctions.get_ip_address()
     window['-IPADDRESS-'].update(SERVER_IP)
+    window['-EXPOSURE-'].update(90)
     window['-STATUSTEXT-'].update("Waiting...")
 
     # This is an Event Loop 
@@ -214,7 +218,7 @@ def main():
             TriggerCameras.shutdowncameras(MCAST_GRP, MCAST_PORT)
 
         elif event == "-SNAP-":
-            snap( values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']))
+            snap( values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']),'', int(values['-EXPOSURE-']))
 
         elif event == "-RETAKE-":
 
@@ -227,15 +231,20 @@ def main():
             snap( values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']), cameraip)
 
         elif event == "-PICTURETAKEN-":
-            window['-STATUSTEXT-'].update(f'Just took   {values["-PICTURETAKEN-"][0]} pictures out of {values["-CAMERACOUNT-"]}!')
-            cameras.append([values["-PICTURETAKEN-"][0], values["-PICTURETAKEN-"][1], values["-PICTURETAKEN-"][2]])
-            window['-CAMERATABLE-'].update(cameras)
+            # check to see if this was for a single pic or all
+            if len(values['-PICTURETAKEN-'][3]) == 0:
+                window['-STATUSTEXT-'].update(f'Just took   {values["-PICTURETAKEN-"][0]} pictures out of {values["-CAMERACOUNT-"]}!')
+                cameras.append([values["-PICTURETAKEN-"][0], values["-PICTURETAKEN-"][1], values["-PICTURETAKEN-"][2]])
+                window['-CAMERATABLE-'].update(cameras)
+            else:
+                window['-STATUSTEXT-'].update( f'Just re- took  picture for  {values["-PICTURETAKEN-"][2]}!')
 
             # if all pics have been taken, move them to client folder.
-            print(TRANSFER)
-            print(f"Destination folder: {values['-DESTINATION-']}")
-            numcopied =   UtilityFunctions.copyfiles(TRANSFER, os.path.join(values["-DESTINATION-"], ''))
-            window['-STATUSTEXT-'].update(f'Just copied {numcopied}  pictures! DONE!')
+            if  values["-PICTURETAKEN-"][0] ==  int(values['-CAMERACOUNT-']):
+                print(TRANSFER)
+                print(f"Destination folder: {values['-DESTINATION-']}")
+                numcopied =   UtilityFunctions.copyfiles(TRANSFER, os.path.join(values["-DESTINATION-"], ''))
+                window['-STATUSTEXT-'].update(f'Just copied {numcopied}  pictures! DONE!')
 
         elif event == '-DELETETRANSFERFOLDER-':
             deletetransferpics(HOME)
