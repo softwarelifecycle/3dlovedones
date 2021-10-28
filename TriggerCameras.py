@@ -3,6 +3,7 @@
 import UtilityFunctions
 import time
 
+
 def restartcameras(mcast_grp, mcast_port):
     sock = UtilityFunctions.getsocket()
     message = b'restart'
@@ -70,15 +71,15 @@ def snap(mcast_grp, mcast_port, window, max_cameras, cameraip='', exposure=90):
     Send the "snap" keyword via multicast and wait for responses.... This will add each response to the cameras list.
     """
     sock = UtilityFunctions.getsocket()
+    numcameras = 0
 
-    # exposure passed in is  the fractional portion... for the camera, it's measured in MICROSECONDS.. so divide 1,000,000 by the denominator in seconds representation of the exposure!
+    # exposure passed in is  the fractional portion... for the camera, it's measured in MICROSECONDS..
+    # so divide 1,000,000 by the denominator in seconds representation of the exposure!
     exp_ms = int(1000000 / exposure)
     if len(cameraip) != 0:
         message = f'{cameraip}:{exp_ms}'
     else:
         message = f'snap: {exp_ms}'
-
-        numcameras = 0
     try:
         # Send data to the multicast group
         sock.sendto(message.encode("UTF-8"), (mcast_grp, mcast_port))

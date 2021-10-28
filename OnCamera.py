@@ -4,6 +4,8 @@ import struct
 import subprocess
 import os
 import logging
+import re
+import glob
 
 """
 Lives on the Raspberry Pi Zero.. is autostarted. 
@@ -22,30 +24,50 @@ def get_ip_address():
     return ipnum.strip()
 
 
-def snappicture(sock, address, local_ip, exp=11000):
-    if os.path.exists(f'/home/pi/camera/{local_ip}_photo.jpg'):
-        os.remove(f'/home/pi/camera/{local_ip}_photo.jpg')
+def increment(num):
+    # Return the first match which is 'E'. Return the 2nd match + 1 which is 'x + 1'
+    return num.group(1) + str(int(num.group(2)) + 1).zfill(2)
+
+
+def snappicture(socket, address, local_ip, exp=11000):
+    # Getting the list of directories
+    path = "/home/pi/camera"
+    picturedir = os.listdir(path)
+
+    # Check to see of folder empty.. if it is, start off at "01"... if not use that to start the numbering.
+    if len(picturedir) == 0:
+        filename = f'{path}/{local_ip}_photo01.jpg'
+    else:
+        filename = re.sub('(_photo)([0-9]{2})', increment, f'{path}/{picturedir[0]}')
 
     try:
-        snapcmd = f'raspistill -ISO 100 -sa 30 -co 20 -q 75 -awb auto -ss {exp}  -o /home/pi/camera/{local_ip}_photo.jpg'
+        snapcmd = f'raspistill -ISO 100 -sa 30 -co 20 -q 100 -awb auto -ss {exp}  -o {filename}'
 
-        sock.sendto(f"Camera CMD:{snapcmd}".encode('utf-8'), address)
+        logging.info(f'snapcmd: {snapcmd}')
+
+        socket.sendto(f"Camera CMD:{snapcmd}".encode('utf-8'), address)
         subprocess.call(snapcmd, shell=True)
-        sock.sendto('TAKEN'.encode('utf-8'), address)
+        socket.sendto('TAKEN'.encode('utf-8'), address)
 
-        sock.sendto("Running SCP!".encode('utf-8'), address)
-        copyprocess = subprocess.Popen(["scp", f'/home/pi/camera/{local_ip}_photo.jpg',
-                                        f'hchattaway@{address[0]}:/SSD500/Dropbox/Python/CommercialSites/3dlovedones/transfer/'])
-        copyprocess.wait()
+        socket.sendto("Running SCP!".encode('utf-8'), address)
+        copycmd = f'scp -o StrictHostKeyChecking=no {filename}  hchattaway@{address[0]}:/home/hchattaway/Dropbox/Python/CommercialSites/3dlovedones/transfer'
+        subprocess.call(copycmd, shell=True)
+
         # send ack!
-        sock.sendto('FINISHED'.encode('utf-8'), address)
+        socket.sendto('FINISHED'.encode('utf-8'), address)
     except Exception as ex:
         logging.info(ex)
-        sock.sendto(f"Error taking pic: {ex}".encode('utf-8'), address)
+        socket.sendto(f"Error taking pic: {ex}".encode('utf-8'), address)
+
+
+def deletepics():
+    for f in glob.glob("/home/pi/camera/*.jpg"):
+        os.remove(f)
 
 
 def main():
-    logging.basicConfig(filename='camera.log', level=logging.INFO,  format='%(name)s - %(levelname)s - %(message)s')
+    deletepics()
+    logging.basicConfig(filename='camera.log', level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -74,6 +96,7 @@ def main():
                 continue
 
             exposure = int(splitdata[1])
+
             logging.info(f'Command: {command}  Exposure: {exposure}')
             sock.sendto(f'Data on Camera: {command} Exposure: {exposure}'.encode('UTF-8'), address)
 
@@ -82,13 +105,14 @@ def main():
                 snappicture(sock, address, local_ip, exposure)
 
             elif command == "restart":
-                sock.sendto('Restarting Service!'.encode('utf-8'), address)
+                sock.sendto('Restarting Service!'.encode('UTF-8'), address)
                 cmd = 'sudo systemctl restart OnCamera.service'
                 subprocess.call(cmd, shell=True)
             elif command == "ping":
-                sock.sendto("PINGED".encode('utf-8'), address)
+                logging.info(f'Sending PINGED ack to {address}!')
+                sock.sendto("PINGED".encode('UTF-8'), address)
             elif command == "shutdown":
-                sock.sendto("Shutting Down!".encode('utf-8'), address)
+                sock.sendto("Shutting Down!".encode('UTF-8'), address)
                 cmd = 'sudo shutdown -h now'
                 subprocess.call(cmd, shell=True)
             elif command == 'reboot':
