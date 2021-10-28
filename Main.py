@@ -50,7 +50,8 @@ def make_window(theme):
             [sg.Button('ReBoot  Cameras', key="-REBOOT-", font='Rasa 12', size=20)],
             [sg.Button('Shut Down  Cameras', key="-SHUTDOWN-", font='Rasa 12', size=20)],
             [sg.Button('Ping Cameras', key="-PING-", font='Rasa 12', size=20)],
-            [sg.Button('Delete Transfer Folder Pics', key="-DELETETRANSFERFOLDER-", font='Rasa 12', size=20)],
+            [sg.Button('Clean Transfer Folder', key="-DELETETRANSFERFOLDER-", font='Rasa 12', size=20)],
+            [sg.Button('Clean Destination Folder', key="-DELETEDESTFOLDER-", font='Rasa 12', size=20)],
             [sg.Button('Take Pictures!', key="-SNAP-", font='Rasa 12', size=20)],
             [sg.Button('Save Project', key="-SAVE-", font='Rasa 12', size=20)],
             [sg.Button('Exit', font='Rasa 12', size=20)]], title="Actions", expand_x=True, pad=(10, 5))]]
@@ -135,7 +136,7 @@ def snap(destination_path, window, max_cameras, cameraip='', exposure=90):
     Send the SNAP command to the camera's to take a pic and then upload.
     """
     # clean up transfer folder first!
-    deletetransferpics(HOME)
+    cleanfolder(TRANSFER)
     window['-STATUSTEXT-'].update('Starting to take pictures...')
     print(f'CameraIP in Snap:{cameraip}')
     if len(cameraip) == 0:
@@ -149,11 +150,13 @@ def snap(destination_path, window, max_cameras, cameraip='', exposure=90):
                                   args=(MCAST_GRP, MCAST_PORT, window, max_cameras, cameraip, exposure), daemon=True)
         thread.start()
 
-def deletetransferpics(home):
+
+def cleanfolder(path):
     """
     cleanup transfer directory either via menu option or when pics are taken.
     """
-    for f in glob.glob(f"{TRANSFER}*.jpg"):
+    trail = os.path.join(path, '')
+    for f in glob.glob(f"{trail}*.*"):
         os.remove(f)
 
 
@@ -194,7 +197,7 @@ def main():
         if event in (None, 'Exit'):
             print("[LOG] Clicked Exit!")
             ok_to_leave = sg.popup_yes_no("Do you really want to leave? Really?", title="Exit?", keep_on_top=True,
-                                        location=(800, 500), grab_anywhere=True)
+                                          location=(800, 500), grab_anywhere=True)
             if ok_to_leave == "Yes":
                 break
         elif event == 'About':
@@ -256,7 +259,10 @@ def main():
                 window['-STATUSTEXT-'].update(f'Just copied {numcopied}  pictures! DONE!')
 
         elif event == '-DELETETRANSFERFOLDER-':
-            deletetransferpics(HOME)
+            cleanfolder(TRANSFER)
+
+        elif event == "-DELETEDESTFOLDER-":
+            cleanfolder(values['-DESTINATION-'])
 
         elif event == "-PING-":
             ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']))
