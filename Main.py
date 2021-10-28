@@ -94,24 +94,6 @@ def make_window(theme):
     return sg.Window('3D Loved Ones', layout, size=(1600, 900), location=(100, 100), resizable=True, finalize=True)
 
 
-def shutdowncameras(window):
-    """
-    Shut down camera completely.
-    """
-    clearCameras("Updating Code!", window)
-
-    for camera in cameras:
-        camera_ip = camera[1]
-        copy_camera_code = subprocess.Popen(
-            ["scp", f'{HOME}OnCamera.py', f'pi@{camera_ip}:/home/pi/listener/'])
-        returncode = copy_camera_code.wait()
-
-        if returncode != 0:
-            sg.popup_error("Error shutting down camera!")
-        else:
-            window['-STATUSTEXT-'].update(f'Camera  {camera_ip} shut down! .')
-
-
 def updatecode(window):
     """
     Copy the OnCamera.py file to the registered cameras
@@ -120,7 +102,7 @@ def updatecode(window):
     for camera in cameras:
         camera_ip = camera[1]
         print(f'Updating Camera {camera_ip} with new code!')
-        window['-STATUSTEXT-'].update(f'Transfering  for {camera_ip} .')
+        window['-STATUSTEXT-'].update(f'Transferring  for {camera_ip} .')
         copyCameraCode = subprocess.Popen(
             ["scp", f'{HOME}OnCamera.py', f'pi@{camera_ip}:/home/pi/listener/'])
         returncode = copyCameraCode.wait()
