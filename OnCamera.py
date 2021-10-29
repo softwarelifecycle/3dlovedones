@@ -54,7 +54,7 @@ def snappicture(socket, address, local_ip, exp=11000):
         subprocess.call(copycmd, shell=True)
 
         # send ack!
-        socket.sendto('FINISHED'.encode('utf-8'), address)
+        socket.sendto(f'FINISHED:{os.path.basename(filename)}'.encode('utf-8'), address)
     except Exception as ex:
         logging.info(ex)
         socket.sendto(f"Error taking pic: {ex}".encode('utf-8'), address)

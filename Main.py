@@ -276,7 +276,7 @@ def main():
                 # then get that row from the cameras collection and grab the 3rd column for the picture name!
                 jpg = cameras[row][2]
 
-                fullimagepath = f"{values['-DESTINATION-']}/{jpg}"
+                fullimagepath = f"{os.path.join(values['-DESTINATION-'], '')}{jpg}"
                 path = Path(fullimagepath)
                 if path.is_file():
                     image = Image.open(fullimagepath)

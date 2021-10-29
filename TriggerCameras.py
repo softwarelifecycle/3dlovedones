@@ -88,17 +88,19 @@ def snap(mcast_grp, mcast_port, window, max_cameras, cameraip='', exposure=90):
             try:
                 data, server = sock.recvfrom(200)
                 data = data.decode('utf-8')
+                result = data.split(":")
                 print(f'Snap Data: {data}')
-                if data == 'TAKEN':
+                if result[0] == 'TAKEN':
                     print(f'Pic Taken by {server[0]}')
 
-                if data != 'TAKEN' and data != "FINISHED":
-                    print(f'{data}')
+                if result[0] != 'TAKEN' and result[0] != "FINISHED":
+                    print(f'{result[0]}')
 
-                if data == 'FINISHED':
+                if result[0] == 'FINISHED':
+                    picname = result[1]
                     numcameras += 1
                     window.write_event_value('-PICTURETAKEN-',
-                                             (numcameras, server[0], f"{server[0]}_photo.jpg", cameraip))
+                                             (numcameras, server[0], f"{picname}", cameraip))
 
                     if numcameras == max_cameras:
                         break
