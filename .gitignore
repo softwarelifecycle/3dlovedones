@@ -7,6 +7,7 @@
 node_modules/
 dist/
 clients/
+env/
 
 # python env folder
 /3dlovedones_env/

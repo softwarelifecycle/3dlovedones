@@ -23,22 +23,12 @@ def get_ip_address():
     ipnum = subprocess.check_output(["hostname", "-I"]).decode("utf-8")
     return ipnum.strip()
 
-
-def increment(num):
-    # Return the first match which is 'E'. Return the 2nd match + 1 which is 'x + 1'
-    return num.group(1) + str(int(num.group(2)) + 1).zfill(2)
-
-
 def snappicture(socket, address, local_ip, exp=11000):
     # Getting the list of directories
     path = "/home/pi/camera"
     picturedir = os.listdir(path)
 
-    # Check to see of folder empty.. if it is, start off at "01"... if not use that to start the numbering.
-    if len(picturedir) == 0:
-        filename = f'{path}/{local_ip}_photo01.jpg'
-    else:
-        filename = re.sub('(_photo)([0-9]{2})', increment, f'{path}/{picturedir[0]}')
+    filename = f'{path}/{local_ip}_photo01.jpg'
 
     try:
         snapcmd = f'raspistill -ISO 100 -sa 30 -co 20 -q 100 -awb auto -ss {exp}  -o {filename}'
@@ -101,7 +91,7 @@ def main():
             sock.sendto(f'Data on Camera: {command} Exposure: {exposure}'.encode('UTF-8'), address)
 
             # take pic if broadcast to all or just this one!
-            if command == "snap" or command == local_ip:
+            if command == "snap" or command.partition('_')[0] == local_ip:
                 snappicture(sock, address, local_ip, exposure)
 
             elif command == "restart":

@@ -4,10 +4,10 @@ import shutil
 import socket
 import subprocess
 import re
-
+from os.path import exists
 
 def get_ip_address():
-    host = socket.gethostname()
+    #host = socket.gethostname()
     ipnum = subprocess.check_output(["hostname", "-I"]).decode("utf-8")
     return ipnum.split()[0].strip()
 
@@ -28,15 +28,29 @@ def tryparse(string, base=10):
     except ValueError:
         return None
 
-
-def copyfiles(src_path, trg_path):
+def copyfiles(src_path, trg_path, just_single_pic = False):
+    """
+    while copying files if a file exists, increment till it doesnt' appear.
+    """
     filecnt = 0
-    for src_file in Path(src_path).glob('*.jpg'):
-        print(f'Src Path: {src_path},   File= {src_file},  Dest Path={trg_path}')
-        path = Path(f'{trg_path}{os.path.basename(src_file)}')
-        shutil.copy(src_file, trg_path)
-        filecnt += 1
-    return filecnt
+   
+    new_name = src_path
+    dest_file = trg_path
+
+    print(f"In Copyfiles Dest: {dest_file}!")
+    if just_single_pic == False:
+        found = exists(dest_file)
+        while found:
+            new_name = re.sub('(_photo)([0-9]{2})', increment, f'{dest_file}')
+            dest_file = new_name
+            found = exists(dest_file)
+            
+    print(f'Source: {src_path} Dest: {dest_file}')
+    shutil.copy(f'{src_path}', dest_file)
+    
+    filecnt += 1
+        
+    return new_name
 
 
 def increment(num):

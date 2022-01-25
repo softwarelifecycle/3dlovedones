@@ -99,8 +99,9 @@ def snap(mcast_grp, mcast_port, window, max_cameras, cameraip='', exposure=90):
                 if result[0] == 'FINISHED':
                     picname = result[1]
                     numcameras += 1
+                    single_pic = len(cameraip) != 0
                     window.write_event_value('-PICTURETAKEN-',
-                                             (numcameras, server[0], f"{picname}", cameraip))
+                                             (numcameras, server[0], f"{picname}", single_pic))
 
                     if numcameras == max_cameras:
                         break
