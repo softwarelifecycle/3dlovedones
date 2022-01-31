@@ -31,7 +31,7 @@ def snappicture(socket, address, local_ip, exp=11000):
     filename = f'{path}/{local_ip}_photo01.jpg'
 
     try:
-        snapcmd = f'raspistill -ISO 100 -sa 30 -co 20 -q 100 -awb auto -ss {exp}  -o {filename}'
+        snapcmd = f'raspistill --raw  -ISO 100 -awb off    -ss {exp}  -o {filename}'
 
         logging.info(f'snapcmd: {snapcmd}')
 
@@ -40,7 +40,7 @@ def snappicture(socket, address, local_ip, exp=11000):
         socket.sendto('TAKEN'.encode('utf-8'), address)
 
         socket.sendto("Running SCP!".encode('utf-8'), address)
-        copycmd = f'scp -o StrictHostKeyChecking=no {filename}  hchattaway@{address[0]}:/home/hchattaway/Dropbox/Python/CommercialSites/3dlovedones/transfer'
+        copycmd = f'scp -o StrictHostKeyChecking=no {filename}  hchattaway@{address[0]}:/Data/Dropbox/Python/CommercialSites/3dlovedones/transfer'
         subprocess.call(copycmd, shell=True)
 
         # send ack!

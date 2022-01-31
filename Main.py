@@ -1,34 +1,28 @@
-from genericpath import exists
+import glob
 import io
-from operator import itemgetter
-import PySimpleGUI as sg
-import subprocess
-import UtilityFunctions
 import os
 import os.path
-import glob
-import TriggerCameras
-import RegisterCameras
-from pathlib import Path
+import subprocess
 import threading
+from pathlib import Path
 from PIL import Image
+import PySimpleGUI as sg
+import RegisterCameras
+import TriggerCameras
+import UtilityFunctions
 
-cameras = [[0, "", ""]]
-
-# set to true here and then after the first SNAP command its set to false... this way the camera knows if another
-# SNAP command is executed to increment the file name by 1
-
-HOME = "/home/hchattaway/Dropbox/Python/CommercialSites/3dlovedones/"
-TRANSFER = "/home/hchattaway/Dropbox/Python/CommercialSites/3dlovedones/transfer"
+HOME = "/Data/Dropbox/Python/CommercialSites/3dlovedones/"
+TRANSFER = "/Data/Dropbox/Python/CommercialSites/3dlovedones/transfer"
 
 MCAST_GRP = '224.0.0.251'
 MCAST_PORT = 5007
 
 
-def make_window(theme):
+def make_window(theme, cameras):
     """"
     Create layout for main window!
     """
+
     sg.theme(sg.OFFICIAL_PYSIMPLEGUI_THEME)
 
     headings = ["Camera #", "Name"]
@@ -37,7 +31,7 @@ def make_window(theme):
     main_tab_left_column = [
         [sg.Frame(layout=[
             [sg.Text("# of Cameras")],
-            [sg.Spin([i for i in range(1, 100)], initial_value=10,
+            [sg.Spin([i for i in range(1, 100)], initial_value=9,
                      k='-CAMERACOUNT-', size=(10, 10))],
             [sg.Text("Server IP Address")],
             [sg.Input(key="-IPADDRESS-", size=(15, 2))],
@@ -65,6 +59,7 @@ def make_window(theme):
                        key="-DELETEDESTFOLDER-", font='Rasa 12', size=20)],
             [sg.Button('Take Pictures!', key="-SNAP-",
                        font='Rasa 12', size=20)],
+            [sg.Button("Convert to DNG's", key="-CONVERTPICS-", font='Rasa 12', size=20)],
             [sg.Button('Re-Load Images', key="-RELOAD-",
                        font='Rasa 12', size=20)],
             [sg.Button('Exit', font='Rasa 12', size=20)]], title="Actions", expand_x=True, pad=(10, 5))]]
@@ -85,13 +80,13 @@ def make_window(theme):
 
     picture_column = [[sg.Frame(layout=[
         [sg.Image(key="-CAMERAIMAGE-")], [sg.Button('Re-Take Picture', key='-RETAKE-', font='Rasa 12', size=20)]],
-        title="Camera Image", pad=(0, 0), size=(800, 800))]]
+        title="Camera Image", pad=(0, 0), size=(1000, 1000))]]
 
     tab_layout = [[sg.Col(main_tab_left_column, vertical_alignment='top', pad=(0, 0)),
                    sg.Col(main_tab_right_column, vertical_alignment='top',
                           expand_x=True, expand_y=True),
                    sg.Col(picture_column, vertical_alignment='top', expand_y=True, expand_x=True, pad=(0, 0),
-                          size=(800, 800))]]
+                          size=(1000, 1000))]]
 
     theme_layout = [[sg.Text("See how elements look under different themes by choosing a different theme here!")],
                     [sg.Listbox(values=sg.theme_list(),
@@ -108,7 +103,7 @@ def make_window(theme):
     return sg.Window('3D Loved Ones', layout, size=(1600, 900), location=(100, 100), resizable=True, finalize=True)
 
 
-def updatecode(window):
+def updatecode(window, cameras):
     """
     Copy the OnCamera.py file to the registered cameras
     """
@@ -127,7 +122,7 @@ def updatecode(window):
     window['-STATUSTEXT-'].update(f'Restarting Services!.')
 
 
-def snap(destination_path, window, max_cameras, cameraip='', exposure=90):
+def snap(destination_path, window, max_cameras, cameras, cameraip='', exposure=90, ):
     """
     Send the SNAP command to the camera's to take a pic and then upload.
     """
@@ -143,7 +138,8 @@ def snap(destination_path, window, max_cameras, cameraip='', exposure=90):
         sg.popup('Supply File Destination!', location=(800, 500))
     else:
         thread = threading.Thread(target=TriggerCameras.snap,
-                                  args=(MCAST_GRP, MCAST_PORT, window, max_cameras, cameraip, exposure), daemon=True)
+                                  args=(MCAST_GRP, MCAST_PORT, window, max_cameras, cameraip, exposure),
+                                  daemon=True)
         thread.start()
 
 
@@ -156,8 +152,8 @@ def cleanfolder(path):
         os.remove(f)
 
 
-def reloadpics(path, window):
-    clearCameras("Re-Loading!", window)
+def reloadpics(path, window, cameras):
+    clear_cameras("Re-Loading!", window, cameras)
     trail = os.path.join(path, '')
     print(f"dest path: {trail}")
     camera = 1
@@ -166,18 +162,18 @@ def reloadpics(path, window):
         cameras.append([camera, os.path.basename(jpg)])
         camera += 1
 
-    sorted_cameras = sorted(cameras, key = lambda camera: camera[1])
+    sorted_cameras = sorted(cameras, key=lambda camera: camera[1])
     return sorted_cameras
 
 
-def clearCameras(message, window):
+def clear_cameras(message, window, cameras):
     window['-STATUSTEXT-'].update(message)
     cameras.clear()
     window['-CAMERATABLE-'].update(cameras)
 
 
-def ping(MCAST_GRP, MCAST_PORT, window, max_cameras):
-    clearCameras("Pinging Cameras!", window)
+def ping(MCAST_GRP, MCAST_PORT, window, max_cameras, cameras):
+    clear_cameras("Pinging Cameras!", window, cameras)
     thread = threading.Thread(target=TriggerCameras.ping,
                               args=(MCAST_GRP, MCAST_PORT,
                                     max_cameras, window),
@@ -189,7 +185,10 @@ def main():
     """
     Entry point for creating view
     """
-    window = make_window(sg.theme("Light Blue 2"))
+
+    cameras = [[0, "", ""]]
+
+    window = make_window(sg.theme("Light Blue 2"), cameras)
     SERVER_IP = UtilityFunctions.get_ip_address()
     window['-IPADDRESS-'].update(SERVER_IP)
     window['-EXPOSURE-'].update(120)
@@ -220,31 +219,31 @@ def main():
         elif event == "Set Theme":
             theme_chosen = values['-THEME LISTBOX-'][0]
             window.close()
-            window = make_window(theme_chosen)
+            window = make_window(theme_chosen, cameras)
 
         elif event == "-UPDATECODE-":
-            updatecode(window)
+            updatecode(window, cameras)
 
         elif event == "-RELOAD-":
-            cameras = reloadpics(values['-DESTINATION-'], window)
+            cameras = reloadpics(values['-DESTINATION-'], window, cameras)
             window['-CAMERATABLE-'].update(cameras)
 
         elif event == "-RESTART-":
-            clearCameras("ReStarting  Camera Service!", window)
+            clear_cameras("ReStarting  Camera Service!", window, cameras)
             TriggerCameras.restartcameras(MCAST_GRP, MCAST_PORT)
 
         elif event == "-REBOOT-":
-            clearCameras("Starting to Reboot Cameras!", window)
+            clear_cameras("Starting to Reboot Cameras!", window, cameras)
             TriggerCameras.rebootcameras(MCAST_GRP, MCAST_PORT)
-            ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']))
+            ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']), cameras)
 
         elif event == "-SHUTDOWN-":
-            clearCameras("Shutting Down Cameras!", window)
+            clear_cameras("Shutting Down Cameras!", window, cameras)
             TriggerCameras.shutdowncameras(MCAST_GRP, MCAST_PORT)
 
         elif event == "-SNAP-":
-            snap(values['-DESTINATION-'], window,
-                 int(values['-CAMERACOUNT-']), '', int(values['-EXPOSURE-']))
+            snap(values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']), cameras, '',
+                 int(values['-EXPOSURE-']), )
 
         elif event == "-RETAKE-":
 
@@ -254,8 +253,8 @@ def main():
             # then get that row from the cameras collection and grab the 2nd column for the camera IP!
             cameraip = cameras[row][1]
             print(f'Camera IP: {cameraip}')
-            snap(values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']),
-                 cameraip,  int(values['-EXPOSURE-']))
+            snap(values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']), cameras,
+                 cameraip, int(values['-EXPOSURE-']))
 
         elif event == "-PICTURETAKEN-":
             # check to see if this was for a single pic or all
@@ -291,28 +290,29 @@ def main():
             cleanfolder(values['-DESTINATION-'])
 
         elif event == "-PING-":
-            ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']))
+            ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']), cameras)
 
         elif event == '-CAMERAPINGED-':
             cams = (int(values['-CAMERAPINGED-'][0]))
-            window['-STATUSTEXT-'].update(
-                f'Just pinged   {cams} cameras out of {values["-CAMERACOUNT-"]}!')
+            window['-STATUSTEXT-'].update(f'Just pinged   {cams} cameras out of {values["-CAMERACOUNT-"]}!')
             cameras.append([cams, values["-CAMERAPINGED-"][1]])
             window['-CAMERATABLE-'].update(cameras)
 
         elif event == "-REGISTER-":
-            clearCameras("Registering Cameras!", window)
+            clear_cameras("Registering Cameras!", window, cameras)
             thread = threading.Thread(target=RegisterCameras.registercameras,
                                       args=(
                                           int(values['-CAMERACOUNT-']), window),
                                       daemon=True)
             thread.start()
+        elif event == "-CONVERTPICS-":
+            UtilityFunctions.convertpics(values['-DESTINATION-'])
 
         elif event == '-CAMERAREGISTERED-':
             window['-STATUSTEXT-'].update(
                 f'Just registered   {values["-CAMERAREGISTERED-"][0]} cameras out of {values["-CAMERACOUNT-"]}!')
             cameras.append([values["-CAMERAREGISTERED-"][0],
-                           values["-CAMERAREGISTERED-"][1]])
+                            values["-CAMERAREGISTERED-"][1]])
             window['-CAMERATABLE-'].update(cameras)
 
         elif event == "-CAMERATABLE-":

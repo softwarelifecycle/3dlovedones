@@ -5,9 +5,12 @@ import socket
 import subprocess
 import re
 from os.path import exists
+import glob
+from pidng.core import RPICAM2DNG
+
 
 def get_ip_address():
-    #host = socket.gethostname()
+    # host = socket.gethostname()
     ipnum = subprocess.check_output(["hostname", "-I"]).decode("utf-8")
     return ipnum.split()[0].strip()
 
@@ -28,12 +31,13 @@ def tryparse(string, base=10):
     except ValueError:
         return None
 
-def copyfiles(src_path, trg_path, just_single_pic = False):
+
+def copyfiles(src_path, trg_path, just_single_pic=False):
     """
     while copying files if a file exists, increment till it doesnt' appear.
     """
     filecnt = 0
-   
+
     new_name = src_path
     dest_file = trg_path
 
@@ -44,13 +48,27 @@ def copyfiles(src_path, trg_path, just_single_pic = False):
             new_name = re.sub('(_photo)([0-9]{2})', increment, f'{dest_file}')
             dest_file = new_name
             found = exists(dest_file)
-            
+
     print(f'Source: {src_path} Dest: {dest_file}')
     shutil.copy(f'{src_path}', dest_file)
-    
+
     filecnt += 1
-        
+
     return new_name
+
+
+def convertpics(path):
+    trail = os.path.join(path, '')
+    todng = RPICAM2DNG()
+    destpath = os.path.join(trail, "dng")
+    if not os.path.exists(destpath):
+        os.mkdir(destpath)
+
+    for jpg in glob.glob(f"{trail}*.jpg"):
+        convertedname = todng.convert(jpg)
+        dngname = os.path.join(destpath, os.path.basename(convertedname))
+        shutil.move(os.path.join(path, os.path.basename(convertedname)), dngname)
+        print(f'path: {path }    DNG: {dngname}')
 
 
 def increment(num):
