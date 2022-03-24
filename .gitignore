@@ -27,6 +27,7 @@ env/
 # Maven
 target/
 dist/
+BackUp/
 
 # JetBrains IDE
 .idea/

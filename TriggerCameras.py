@@ -2,7 +2,10 @@
 # Guidance:  https://stackoverflow.com/a/1794373
 import UtilityFunctions
 import time
+import Strings
+import logging
 
+module_logger = logging.getLogger('3dModelApp.triggers')
 
 def restartcameras(mcast_grp, mcast_port):
     sock = UtilityFunctions.getsocket()
@@ -10,20 +13,17 @@ def restartcameras(mcast_grp, mcast_port):
     sock.sendto(message, (mcast_grp, mcast_port))
     sock.close()
 
-
 def rebootcameras(mcast_grp, mcast_port):
     sock = UtilityFunctions.getsocket()
     message = b'reboot'
     sock.sendto(message, (mcast_grp, mcast_port))
     sock.close()
 
-
 def shutdowncameras(mcast_grp, mcast_port):
     sock = UtilityFunctions.getsocket()
     message = b'shutdown'
     sock.sendto(message, (mcast_grp, mcast_port))
     sock.close()
-
 
 def ping(mcast_grp, mcast_port, max_cameras, window):
     """
@@ -33,38 +33,38 @@ def ping(mcast_grp, mcast_port, max_cameras, window):
     message = "ping:0"
     numcameras = 0
     try:
-        print('sending {!r}'.format(message))
+        module_logger.info('sending {!r}'.format(message))
         start = time.time()
         sock.sendto(message.encode("UTF-8"), (mcast_grp, mcast_port))
-        print('waiting for ping ack...')
+        module_logger.info('waiting for ping ack...')
         while True:
             try:
-                print("Waiting on recvfrom...")
+                module_logger.info("Waiting on recvfrom...")
                 data, camaddress = sock.recvfrom(200)
                 data = data.decode('UTF-8')
-                print(f'Ping Data Returned: {data}')
-                print(time.time() - start)
+                module_logger.info(f'Ping Data Returned: {data}')
+                module_logger.info(f"Elapsed Time: {time.time() - start}")
 
                 if data == 'PINGED':
-                    print(f'PINGED! by {camaddress[0]}')
+                    module_logger.info(f'PINGED! by {camaddress[0]}')
                     numcameras += 1
-                    window.write_event_value('-CAMERAPINGED-', (numcameras, camaddress[0], ""))
+                    window.write_event_value(
+                        Strings.EventList.CameraPinged, (numcameras, camaddress[0], ""))
 
                 if numcameras == max_cameras:
                     break
 
             except sock.timeout:
-                print('timed out, no more responses')
+                module_logger.info('timed out, no more responses')
                 break
     except Exception as ex:
-        print(f"Problem sending trigger! {ex}")
+        module_logger.info(f"Problem sending trigger! {ex}")
 
     finally:
-        print('closing socket')
+        module_logger.info('closing socket')
         sock.close()
 
     return numcameras
-
 
 def snap(mcast_grp, mcast_port, window, max_cameras, cameraip='', exposure=90):
     """
@@ -83,37 +83,37 @@ def snap(mcast_grp, mcast_port, window, max_cameras, cameraip='', exposure=90):
     try:
         # Send data to the multicast group
         sock.sendto(message.encode("UTF-8"), (mcast_grp, mcast_port))
-        print(f'sent snap command {message},   waiting for snap  ack...')
+        module_logger.info(f'sent snap command {message},   waiting for snap  ack...')
         while True:
             try:
                 data, server = sock.recvfrom(200)
                 data = data.decode('utf-8')
                 result = data.split(":")
-                print(f'Snap Data: {data}')
+                module_logger.info(f'Snap Data: {data}')
                 if result[0] == 'TAKEN':
-                    print(f'Pic Taken by {server[0]}')
+                    module_logger.info(f'Pic Taken by {server[0]}')
 
                 if result[0] != 'TAKEN' and result[0] != "FINISHED":
-                    print(f'{result[0]}')
+                    module_logger.info(f'{result[0]}')
 
                 if result[0] == 'FINISHED':
                     picname = result[1]
                     numcameras += 1
                     single_pic = len(cameraip) != 0
-                    window.write_event_value('-PICTURETAKEN-',
-                                             (numcameras, server[0], f"{picname}", single_pic))
+                    window.write_event_value(Strings.EventList.PictureTaken,
+                                                (numcameras, server[0], f"{picname}", single_pic))
 
                     if numcameras == max_cameras:
                         break
 
             except sock.timeout:
-                print('timed out, no more responses')
+                module_logger.info('timed out, no more responses')
                 break
 
     except Exception as ex:
-        print(f"Problem sending trigger: {ex}")
+        module_logger.info(f"Problem sending trigger: {ex}")
 
     finally:
-        print('closing socket')
+        module_logger.info('closing socket')
         sock.close()
     return numcameras

@@ -6,7 +6,20 @@ import subprocess
 import re
 from os.path import exists
 import glob
+import logging
 from pidng.core import RPICAM2DNG
+
+
+module_logger = logging.getLogger('3dModelApp.utilities')
+
+
+def cleanfolder(path):
+    """
+    cleanup transfer directory either via menu option or when pics are taken.
+    """
+    trail = os.path.join(path, '')
+    for f in glob.glob(f"{trail}*.*"):
+        os.remove(f)
 
 
 def get_ip_address():
@@ -21,7 +34,7 @@ def tryparse(string, base=10):
     ...     print(n)
     ...
     123
-     if (n := tryparse("abc")) is None:
+    if (n := tryparse("abc")) is None:
     ...     print(n)
     None
     """
@@ -41,34 +54,36 @@ def copyfiles(src_path, trg_path, just_single_pic=False):
     new_name = src_path
     dest_file = trg_path
 
-    print(f"In Copyfiles Dest: {dest_file}!")
     if just_single_pic == False:
         found = exists(dest_file)
         while found:
-            new_name = re.sub('(_photo)([0-9]{2})', increment, f'{dest_file}')
+            new_name = re.sub(
+                '(_photo)([0-9]{2})', increment, f'{dest_file}')
             dest_file = new_name
             found = exists(dest_file)
 
-    print(f'Source: {src_path} Dest: {dest_file}')
     shutil.copy(f'{src_path}', dest_file)
-
+    module_logger.info(f'Copied file: {dest_file}')
     filecnt += 1
-
     return new_name
 
 
 def convertpics(path):
-    trail = os.path.join(path, '')
+    """
+    Converts raw images in jpg format to DNG that can be used in RawThereppe for conversion into TIFF
+    """
+    source = os.path.join(path, '')
     todng = RPICAM2DNG()
-    destpath = os.path.join(trail, "dng")
+    destpath = os.path.join(source, "dng")
     if not os.path.exists(destpath):
         os.mkdir(destpath)
 
-    for jpg in glob.glob(f"{trail}*.jpg"):
+    for jpg in glob.glob(f"{source}*.jpg"):
         convertedname = todng.convert(jpg)
+        module_logger.info(f"Converted: {jpg}")
         dngname = os.path.join(destpath, os.path.basename(convertedname))
-        shutil.move(os.path.join(path, os.path.basename(convertedname)), dngname)
-        print(f'path: {path }    DNG: {dngname}')
+        shutil.move(os.path.join(
+            path, os.path.basename(convertedname)), dngname)
 
 
 def increment(num):
@@ -83,6 +98,8 @@ def getsocket():
     # be re-sent/broadcast (see https://www.tldp.org/HOWTO/Multicast-HOWTO-6.html)
     MULTICAST_TTL = 1
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
+    sock = socket.socket(
+        socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    sock.setsockopt(socket.IPPROTO_IP,
+                    socket.IP_MULTICAST_TTL, MULTICAST_TTL)
     return sock
