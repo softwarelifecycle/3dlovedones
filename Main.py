@@ -55,14 +55,16 @@ def make_window(theme, cameras):
                        font='Rasa 12', size=20)],
             [sg.Button('Shut Down  Cameras', key=Strings.EventList.Shutdown,
                        font='Rasa 12', size=20)],
-            [sg.Button('Ping Cameras', key=Strings.EventList.Ping, font='Rasa 12', size=20)],
+            [sg.Button('Ping Cameras', key=Strings.EventList.Ping,
+                       font='Rasa 12', size=20)],
             [sg.Button('Clean Transfer Folder',
                        key=Strings.EventList.DeleteTransferFolder, font='Rasa 12', size=20)],
             [sg.Button('Clean Destination Folder',
                        key=Strings.EventList.DeleteTransferFolder, font='Rasa 12', size=20)],
             [sg.Button('Take Pictures!', key=Strings.EventList.Snap,
                        font='Rasa 12', size=20)],
-            [sg.Button("Convert to DNG's", key=Strings.EventList.ConvertPics, font='Rasa 12', size=20)],
+            [sg.Button(
+                "Convert to DNG's", key=Strings.EventList.ConvertPics, font='Rasa 12', size=20)],
             [sg.Button('Re-Load Images', key="-RELOAD-",
                        font='Rasa 12', size=20)],
             [sg.Button('Exit', font='Rasa 12', size=20)]], title="Actions", expand_x=True, pad=(10, 5))]]
@@ -128,21 +130,22 @@ def snap(destination_path, window, max_cameras, cameras, cameraip='', exposure=9
     """
     Send the SNAP command to the camera's to take a pic and then upload.
     """
-    # clean up transfer folder first!
-    UtilityFunctions.cleanfolder(TRANSFER)
-    window['-STATUSTEXT-'].update('Starting to take pictures...')
-    if len(cameraip) == 0:
-        UtilityFunctions.cleanfolder(destination_path)
-        cameras.clear()
-        
-    window[Strings.ObjectList.CameraTable].update(cameras)
 
     if len(destination_path.strip()) == 0:
         sg.popup('Supply File Destination!', location=(800, 500))
     else:
+        # clean up transfer folder first!
+        UtilityFunctions.cleanfolder(TRANSFER)
+        window['-STATUSTEXT-'].update('Starting to take pictures...')
+        if len(cameraip) == 0:
+            UtilityFunctions.cleanfolder(destination_path)
+            cameras.clear()
+
+        window[Strings.ObjectList.CameraTable].update(cameras)
         thread = threading.Thread(target=TriggerCameras.snap,
-                                  args=(MCAST_GRP, MCAST_PORT, window, max_cameras, cameraip, exposure),
-                                  daemon=True)
+                              args=(MCAST_GRP, MCAST_PORT, window,
+                                    max_cameras, cameraip, exposure),
+                              daemon=True)
         thread.start()
 
 
@@ -182,7 +185,8 @@ def main():
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler('server.log', mode='w')
     fh.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
@@ -193,7 +197,6 @@ def main():
     window['-IPADDRESS-'].update(SERVER_IP)
     window['-EXPOSURE-'].update(120)
     window['-STATUSTEXT-'].update("Waiting...")
-
 
     # This is an Event Loop
     while True:
@@ -227,14 +230,15 @@ def main():
             cameras = reloadpics(values['-DESTINATION-'], window, cameras)
             window['-CAMERATABLE-'].update(cameras)
 
-        elif event ==  Strings.EventList.Restart:
+        elif event == Strings.EventList.Restart:
             clear_cameras("ReStarting  Camera Service!", window, cameras)
             TriggerCameras.restartcameras(MCAST_GRP, MCAST_PORT)
 
         elif event == Strings.EventList.Reboot:
             clear_cameras("Starting to Reboot Cameras!", window, cameras)
             TriggerCameras.rebootcameras(MCAST_GRP, MCAST_PORT)
-            ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']), cameras)
+            ping(MCAST_GRP, MCAST_PORT, window, int(
+                values['-CAMERACOUNT-']), cameras)
 
         elif event == Strings.EventList.Shutdown:
             clear_cameras("Shutting Down Cameras!", window, cameras)
@@ -272,7 +276,8 @@ def main():
             source_file = f'{TRANSFER}/{os.path.basename(values["-PICTURETAKEN-"][2])}'
             # if exists(source_file):
             dest_file = f'{values["-DESTINATION-"]}/{os.path.basename(values["-PICTURETAKEN-"][2])}'
-            file_name = UtilityFunctions.copyfiles(source_file, dest_file, just_single_pic)
+            file_name = UtilityFunctions.copyfiles(
+                source_file, dest_file, just_single_pic)
             cameras.append([values["-PICTURETAKEN-"][0], file_name])
             cameras = sorted(cameras, key=lambda camera: camera[1])
             window['-STATUSTEXT-'].update(f'Just copied {file_name}! DONE!')
@@ -284,11 +289,13 @@ def main():
             UtilityFunctions.cleanfolder(values['-DESTINATION-'])
 
         elif event == Strings.EventList.Ping:
-            ping(MCAST_GRP, MCAST_PORT, window, int(values['-CAMERACOUNT-']), cameras)
+            ping(MCAST_GRP, MCAST_PORT, window, int(
+                values['-CAMERACOUNT-']), cameras)
 
         elif event == Strings.EventList.CameraPinged:
             cams = (int(values['-CAMERAPINGED-'][0]))
-            window['-STATUSTEXT-'].update(f'Just pinged   {cams} cameras out of {values["-CAMERACOUNT-"]}!')
+            window['-STATUSTEXT-'].update(
+                f'Just pinged   {cams} cameras out of {values["-CAMERACOUNT-"]}!')
             cameras.append([cams, values["-CAMERAPINGED-"][1]])
             window['-CAMERATABLE-'].update(cameras)
 
