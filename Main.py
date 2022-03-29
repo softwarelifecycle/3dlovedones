@@ -105,7 +105,7 @@ def make_window(theme, cameras):
 
     layout += [[sg.TabGroup([[sg.Tab('Main', tab_layout), sg.Tab('Theme', theme_layout)]], key='-TAB GROUP-',
                             size=(1990, 790))]]
-    return sg.Window('3D Loved Ones', layout, size=(1600, 900), location=(100, 100), resizable=True, finalize=True)
+    return sg.Window('Photogrammetry Model Builder', layout, size=(1600, 900), location=(100, 100), resizable=True, finalize=True)
 
 
 def updatecode(window, cameras):
@@ -255,7 +255,7 @@ def main():
 
             # then get that row from the cameras collection and grab the 2nd column for the camera IP!
             cameraip = cameras[row][1]
-            logging.info(f'ReTook Camera IP: {cameraip}')
+            logger.info(f'ReTook Camera IP: {cameraip}')
             snap(values['-DESTINATION-'], window, int(values['-CAMERACOUNT-']), cameras,
                  cameraip, int(values['-EXPOSURE-']))
 
@@ -268,7 +268,7 @@ def main():
                 picinfo = f'Just took {values["-PICTURETAKEN-"][0]} pictures out of {values["-CAMERACOUNT-"]}!'
                 window['-STATUSTEXT-'].update(picinfo)
                 window['-CAMERATABLE-'].update(cameras)
-                logging.info(picinfo)
+                logger.info(picinfo)
             else:
                 window['-STATUSTEXT-'].update(
                     f'Just re- took  picture for  {values["-PICTURETAKEN-"][2]}!')

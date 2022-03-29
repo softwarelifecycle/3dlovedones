@@ -77,6 +77,9 @@ def convertpics(path):
     destpath = os.path.join(source, "dng")
     if not os.path.exists(destpath):
         os.mkdir(destpath)
+    else:
+        cleanfolder(destpath)
+
 
     for jpg in glob.glob(f"{source}*.jpg"):
         convertedname = todng.convert(jpg)
