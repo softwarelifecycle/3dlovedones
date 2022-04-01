@@ -57,8 +57,8 @@ def ping(mcast_grp, mcast_port, max_cameras, window):
             except sock.timeout:
                 module_logger.info('timed out, no more responses')
                 break
-    except Exception as ex:
-        module_logger.info(f"Problem sending trigger! {ex}")
+    #except Exception as ex:
+    #    module_logger.info(f"Problem sending trigger! {ex}")
 
     finally:
         module_logger.info('closing socket')
@@ -110,8 +110,8 @@ def snap(mcast_grp, mcast_port, window, max_cameras, cameraip='', exposure=90):
                 module_logger.info('timed out, no more responses')
                 break
 
-    except Exception as ex:
-        module_logger.info(f"Problem sending trigger: {ex}")
+    #except Exception as ex:
+    #   module_logger.info(f"Problem sending trigger: {ex}")
 
     finally:
         module_logger.info('closing socket')

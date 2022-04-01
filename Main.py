@@ -141,6 +141,19 @@ def snap(destination_path, window, max_cameras, cameras, cameraip='', exposure=9
             UtilityFunctions.cleanfolder(destination_path)
             cameras.clear()
 
+            #create folders for converted images...
+            dngDestPath = os.path.join(destination_path, "dng")
+            jpgDestPath = os.path.join(destination_path, "jpg")
+            if not os.path.exists(dngDestPath):
+                os.mkdir(dngDestPath)
+            else:
+                UtilityFunctions.cleanfolder(dngDestPath)
+
+            if not os.path.exists(jpgDestPath):
+                os.mkdir(jpgDestPath)
+            else:
+                UtilityFunctions.cleanfolder(jpgDestPath)
+
         window[Strings.ObjectList.CameraTable].update(cameras)
         thread = threading.Thread(target=TriggerCameras.snap,
                               args=(MCAST_GRP, MCAST_PORT, window,

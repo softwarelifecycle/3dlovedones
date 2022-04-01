@@ -2,12 +2,15 @@ import os.path
 from pathlib import Path
 import shutil
 import socket
+import struct
 import subprocess
 import re
 from os.path import exists
 import glob
 import logging
 from pidng.core import RPICAM2DNG
+import cv2
+from process_raw import DngFile
 
 
 module_logger = logging.getLogger('3dModelApp.utilities')
@@ -64,29 +67,30 @@ def copyfiles(src_path, trg_path, just_single_pic=False):
 
     shutil.copy(f'{src_path}', dest_file)
     module_logger.info(f'Copied file: {dest_file}')
+    convertpics(dest_file)
     filecnt += 1
     return new_name
 
 
-def convertpics(path):
+def convertpics(image):
     """
     Converts raw images in jpg format to DNG that can be used in RawThereppe for conversion into TIFF
     """
-    source = os.path.join(path, '')
+    source = os.path.dirname(image)
     todng = RPICAM2DNG()
-    destpath = os.path.join(source, "dng")
-    if not os.path.exists(destpath):
-        os.mkdir(destpath)
-    else:
-        cleanfolder(destpath)
+    dngDestPath = os.path.join(source, "dng")
+    jpgDestPath = os.path.join(source, "jpg")
+   
+    convertedname = todng.convert(image)
+    module_logger.info(f"Converted: {image}")
+    dngname = os.path.join(dngDestPath, os.path.basename(convertedname))
+    jpgname = os.path.join(jpgDestPath, os.path.basename(image))
+    shutil.move(os.path.join(source, os.path.basename(convertedname)), dngname)
 
-
-    for jpg in glob.glob(f"{source}*.jpg"):
-        convertedname = todng.convert(jpg)
-        module_logger.info(f"Converted: {jpg}")
-        dngname = os.path.join(destpath, os.path.basename(convertedname))
-        shutil.move(os.path.join(
-            path, os.path.basename(convertedname)), dngname)
+    #convert dng to jpg for display in grid
+    dng = DngFile.read(dngname)
+    rgb1 = dng.postprocess()  # demosaicing ... converts raw camera image to jpg
+    cv2.imwrite(jpgname, rgb1[:, :, ::-1])
 
 
 def increment(num):
@@ -105,4 +109,5 @@ def getsocket():
         socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.IPPROTO_IP,
                     socket.IP_MULTICAST_TTL, MULTICAST_TTL)
+    
     return sock
