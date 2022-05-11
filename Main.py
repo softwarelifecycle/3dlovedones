@@ -1,24 +1,33 @@
 import glob
 import io
+import logging
 import os
 import os.path
-from statistics import mode
 import subprocess
 import threading
-import logging
 from pathlib import Path
+from statistics import mode
 from PIL import Image
 import PySimpleGUI as sg
 import RegisterCameras
+import Strings
 import TriggerCameras
 import UtilityFunctions
-import Strings
 
 HOME = "/Data/Dropbox/Python/CommercialSites/3dlovedones/"
 TRANSFER = "/Data/Dropbox/Python/CommercialSites/3dlovedones/transfer"
 
 MCAST_GRP = '224.0.0.251'
 MCAST_PORT = 5007
+
+logger = logging.getLogger('3dModelApp')
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('server.log', mode='w')
+fh.setLevel(logging.DEBUG)
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 
 def make_window(theme, cameras):
@@ -63,20 +72,19 @@ def make_window(theme, cameras):
                        key=Strings.EventList.DeleteTransferFolder, font='Rasa 12', size=20)],
             [sg.Button('Take Pictures!', key=Strings.EventList.Snap,
                        font='Rasa 12', size=20)],
-            [sg.Button(
-                "Convert to DNG's", key=Strings.EventList.ConvertPics, font='Rasa 12', size=20)],
             [sg.Button('Re-Load Images', key="-RELOAD-",
                        font='Rasa 12', size=20)],
             [sg.Button('Exit', font='Rasa 12', size=20)]], title="Actions", expand_x=True, pad=(10, 5))]]
 
+    colwidths = list(map(lambda x:len(x)+2, headings)) # find the widths of columns in character.
     main_tab_right_column = [[sg.Table(values=cameras, headings=headings, max_col_width=25,
                                        # background_color='light blue',
-                                       justification='right',
-                                       num_rows=4,
-                                       auto_size_columns=True,
+                                       justification='left', 
+                                       def_col_width=[5,20],
                                        expand_x=True, expand_y=True,
                                        alternating_row_color='gray',
-                                       key='-CAMERATABLE-',
+                                       col_widths = colwidths,
+                                       key=Strings.EventList.CameraTable,
                                        row_height=35,
                                        enable_events=True,
                                        tooltip='Camera Listing')],
@@ -85,11 +93,10 @@ def make_window(theme, cameras):
 
     picture_column = [[sg.Frame(layout=[
         [sg.Image(key="-CAMERAIMAGE-")], [sg.Button('Re-Take Picture', key=Strings.EventList.Retake, font='Rasa 12', size=20)]],
-        title="Camera Image", pad=(0, 0), size=(1000, 1000))]]
+        title="Camera Image", pad=(0, 0), size=(1000, 1040))]]
 
     tab_layout = [[sg.Col(main_tab_left_column, vertical_alignment='top', pad=(0, 0)),
-                   sg.Col(main_tab_right_column, vertical_alignment='top',
-                          expand_x=True, expand_y=True),
+                   sg.Col(main_tab_right_column, vertical_alignment='top', expand_x=True, expand_y=True),
                    sg.Col(picture_column, vertical_alignment='top', expand_y=True, expand_x=True, pad=(0, 0),
                           size=(1000, 1000))]]
 
@@ -104,8 +111,8 @@ def make_window(theme, cameras):
                        relief="raised")]]
 
     layout += [[sg.TabGroup([[sg.Tab('Main', tab_layout), sg.Tab('Theme', theme_layout)]], key='-TAB GROUP-',
-                            size=(1990, 790))]]
-    return sg.Window('Photogrammetry Model Builder', layout, size=(1600, 900), location=(100, 100), resizable=True, finalize=True)
+                            size=(1920, 1080))]]
+    return sg.Window('Photogrammetry Model Builder', layout, size=(1920, 1080), location=(0,0), resizable=True, finalize=True)
 
 
 def updatecode(window, cameras):
@@ -137,22 +144,34 @@ def snap(destination_path, window, max_cameras, cameras, cameraip='', exposure=9
         # clean up transfer folder first!
         UtilityFunctions.cleanfolder(TRANSFER)
         window['-STATUSTEXT-'].update('Starting to take pictures...')
+        # if retaking all the pictures, clean out folders!
         if len(cameraip) == 0:
-            UtilityFunctions.cleanfolder(destination_path)
+            UtilityFunctions.cleanfolder(destination_path, "*.jpg")
             cameras.clear()
 
             #create folders for converted images...
             dngDestPath = os.path.join(destination_path, "dng")
             jpgDestPath = os.path.join(destination_path, "jpg")
+            tiffDestPath = os.path.join(destination_path, "tiff")
+
             if not os.path.exists(dngDestPath):
                 os.mkdir(dngDestPath)
             else:
-                UtilityFunctions.cleanfolder(dngDestPath)
+                if len(cameraip) == 0:
+                    UtilityFunctions.cleanfolder(dngDestPath)
 
             if not os.path.exists(jpgDestPath):
                 os.mkdir(jpgDestPath)
             else:
-                UtilityFunctions.cleanfolder(jpgDestPath)
+                if len(cameraip) == 0:
+                    UtilityFunctions.cleanfolder(jpgDestPath)
+
+            if not os.path.exists(tiffDestPath):
+                os.mkdir(tiffDestPath)
+            else:
+                if len(cameraip) == 0:
+                    UtilityFunctions.cleanfolder(tiffDestPath)
+
 
         window[Strings.ObjectList.CameraTable].update(cameras)
         thread = threading.Thread(target=TriggerCameras.snap,
@@ -164,10 +183,12 @@ def snap(destination_path, window, max_cameras, cameras, cameraip='', exposure=9
 
 def reloadpics(path, window, cameras):
     clear_cameras("Re-Loading!", window, cameras)
-    trail = os.path.join(path, '')
+    jpgPath = os.path.join(path, 'jpg/')
+    logger.info(f"Reloading from: {jpgPath}")
     camera = 1
-    for jpg in glob.glob(f"{trail}*.jpg"):
+    for jpg in glob.glob(f"{jpgPath}*.jpg"):
         cameras.append([camera, os.path.basename(jpg)])
+        logger.info(f"name Length:  {len(os.path.basename(jpg))}")
         camera += 1
 
     sorted_cameras = sorted(cameras, key=lambda camera: camera[1])
@@ -194,22 +215,16 @@ def main():
     Entry point for creating view
     """
 
-    logger = logging.getLogger('3dModelApp')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('server.log', mode='w')
-    fh.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
+   
 
-    cameras = [[0, "", ""]]
+    cameras = [[0, ""]]
 
     window = make_window(sg.theme("Light Blue 2"), cameras)
     SERVER_IP = UtilityFunctions.get_ip_address()
     window['-IPADDRESS-'].update(SERVER_IP)
     window['-EXPOSURE-'].update(120)
     window['-STATUSTEXT-'].update("Waiting...")
+    window[Strings.EventList.CameraTable].expand(expand_x=False, expand_y=False)  
 
     # This is an Event Loop
     while True:
@@ -217,7 +232,7 @@ def main():
         # keep an animation running so show things are happening
         # window['-GIF-IMAGE-'].update_animation(sg.DEFAULT_BASE64_LOADING_GIF, time_between_frames=100)
         if event not in (sg.TIMEOUT_EVENT, sg.WIN_CLOSED):
-            logger.info(f'============ Event = {event}  ==============')
+            logger.info(f'============ Event = {event} Destination: {values["-DESTINATION-"]} ==============')
            # for key in values:
            #     print(key, ' = ', values[key])
         if event in (None, 'Exit'):
@@ -280,7 +295,6 @@ def main():
             if just_single_pic == False:
                 picinfo = f'Just took {values["-PICTURETAKEN-"][0]} pictures out of {values["-CAMERACOUNT-"]}!'
                 window['-STATUSTEXT-'].update(picinfo)
-                window['-CAMERATABLE-'].update(cameras)
                 logger.info(picinfo)
             else:
                 window['-STATUSTEXT-'].update(
@@ -291,8 +305,11 @@ def main():
             dest_file = f'{values["-DESTINATION-"]}/{os.path.basename(values["-PICTURETAKEN-"][2])}'
             file_name = UtilityFunctions.copyfiles(
                 source_file, dest_file, just_single_pic)
-            cameras.append([values["-PICTURETAKEN-"][0], file_name])
-            cameras = sorted(cameras, key=lambda camera: camera[1])
+
+            logger.info(f"Length, Picture Taken: Name:{len(os.path.basename(file_name))}")
+            cameras.append([values["-PICTURETAKEN-"][0], os.path.basename(file_name)])
+            cameras = sorted(cameras, key=lambda camera: camera[0])
+            window['-CAMERATABLE-'].update(values=cameras)
             window['-STATUSTEXT-'].update(f'Just copied {file_name}! DONE!')
 
         elif event == Strings.EventList.DeleteTransferFolder:
@@ -306,11 +323,11 @@ def main():
                 values['-CAMERACOUNT-']), cameras)
 
         elif event == Strings.EventList.CameraPinged:
-            cams = (int(values['-CAMERAPINGED-'][0]))
+            cams = (int(values[Strings.EventList.CameraPinged][0]))
             window['-STATUSTEXT-'].update(
                 f'Just pinged   {cams} cameras out of {values["-CAMERACOUNT-"]}!')
-            cameras.append([cams, values["-CAMERAPINGED-"][1]])
-            window['-CAMERATABLE-'].update(cameras)
+            cameras.append([cams, values[Strings.EventList.CameraPinged][1]])
+            window['-CAMERATABLE-'].update(values=cameras)
 
         elif event == Strings.EventList.Register:
             clear_cameras("Registering Cameras!", window, cameras)
@@ -334,13 +351,15 @@ def main():
                 row = values["-CAMERATABLE-"][0]
 
                 # then get that row from the cameras collection and grab the 3rd column for the picture name!
-                jpg = cameras[row][1]
+                jpg = os.path.basename(cameras[row][1])
+                logger.info(f'Displaying JPG: {jpg}')
 
-                fullimagepath = f"{os.path.join(values['-DESTINATION-'], '')}{jpg}"
+                fullimagepath = f"{os.path.join(values['-DESTINATION-'], 'jpg/')}{jpg}"
+                logger.info(f'Displaying Image: {fullimagepath}')
                 path = Path(fullimagepath)
                 if path.is_file():
                     image = Image.open(fullimagepath)
-                    image.thumbnail((800, 800))
+                    image.thumbnail((1000, 1000))
                     bio = io.BytesIO()
                     image.save(bio, format="PNG")
                     window["-CAMERAIMAGE-"].update(data=bio.getvalue())

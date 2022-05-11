@@ -1,24 +1,78 @@
 #!/usr/bin/python3
-version = __version__ = "4.56.0.7 Unreleased"
+
+version = __version__ = "4.57.0.27 Unreleased"
 
 _change_log = """
-    Changelog since 4.56.0 released to PyPI on 5-Jan-2022
+    Changelog since 4.57.0 released to PyPI on 13-Feb-2022
     
-    4.56.0.1
-        set_options - added disable_modal_windows option to provide a single call to disable the modal feature globally (including popups)
-    4.56.0.2
-        Added OptionMenu to the list of tkinter widgets that are ignored when the grab anywhere feature is used
-    4.56.0.3
-        Slider - update the range FIRST and then the value in the update method (thank you Jason for the fix)
-    4.56.0.4
-        Updated docstrings for all Element.update methods to indicate that the helper function "pin" need to be used to keep an element
-            in place if visibility changes
-    4.56.0.5
-        Replaced sponsor tab with a tab about the udemy course as well as the buy me a coffee link.
-    4.56.0.6
-        Fixed event generation for Spin element.  Also changed to use the "command" parameter to get the event. NOTE - still need to handle manual entry
-    4.56.0.7
-        New Emojis for 2022!        
+    4.57.0.1
+        Added checking for timeout error to execute_get_results instead of showing an error popup as it's not truly an error in this case
+    4.57.0.2
+        Added cast to bool of default parm for Checkbox element in case user passes in an incorrect type
+    4.57.0.3
+        Coupon... for 30 days this time....
+    4.57.0.4
+        ButtonMenu.update - addition of button_text parameter. Enables changing text displayed on the ButtonMenu. Should have been an original feature.
+    4.57.0.5
+        Open GitHub Issue GUI - Tabs use 2 lines now. Added tab asking where found PSG.
+    4.57.0.6
+        New symbols SYMBOL_CHECKMARK_SMALL & SYMBOL_X_SMALL
+    4.57.0.7
+        Added click - PEP8 alias for ButtonMenu.Click
+    4.57.0.8
+        Automatically add timeouts to user reads if a debugger window is opened. Need to add support for multi-window applications still.
+    4.57.0.9
+        start_thread - a simple alias for perform_long_operation.  It's clearer what's happening with this alias.
+        Added bind_return_key to Spin element.  If element has focus and the return key is pressed, then an event is generated.
+    4.57.0.10
+        If an element is disabled, then don't generate events (fixed specifically for Input element)
+    4.57.0.11
+        Added event generation back for disabled elements if the event was a browse button filling in the element
+    4.57.0.12
+        Don't generate events if no files / folders selected using File or Folder Browse buttons. If cancel is clicked then no longer generates an event. 
+    4.57.0.13
+        Fix docstring for image in the Titlebar element. Incorrectly said an ICO file can be used. Must be PNG or GIF
+    4.57.0.14
+        Windows-specific code that enables the PySimpleGUI supplied icon to be shown rather than the python.exe logo (thank you Jason)
+    4.57.0.15
+        Removed all temporary Tk() window creation and instead create the hidden master root. These were required for operations like getting 
+            the list of fonts from tkinter, the screensize, character width and height. This way one and only one Tk window will ever be creeated.
+            The reason for the change is that the Mac crashes if multiple Tk() objects are created, even if only 1 at a time is active.
+    4.57.0.16
+        Addition of image_source parm to Button. It can be either a filename or a base64 string. This is like the Image elements parms
+        Graph element doc string improvement. Describes the mouse up event.
+    4.57.0.17
+        New coupon code
+    4.57.0.18
+        Element.get_next_focus added. Returns the element that should get the focus after the indicated element
+        Element.get_previous_focus added. Returns the element that should get the focus after the indicated element
+        Window.widget_to_element - returns the element that a tkinter widget is used to implement (it's a reverse lookup)
+        Element.widget - Property that's PEP8 compliant that returns Element.Widget
+        Element.key - Property that's PEP8 compliant that returns Element.Key
+        Better exception error reporting for the Element focus methods.  Uses popups with tracebacks now instead of prints
+        Simplified docstring for Window[] to show Element and None as return values
+    4.57.0.19
+        Oops... added back the rtype docstring for Window __getitem__ so that PyCharm doesn't generate warnings.  
+            Using Element by itself isn't enough.  The entire list of possible elements is needed to that the code completion /error checking works
+    4.57.0.20
+        Simplified Radio, Checkbox, Slider creation. Moved the command parm outside the creation and instead made a config call.
+    4.57.0.21
+        Another coupon code.  Udemy makes it difficult by only giving a valid period of 5 days for some coupons
+    4.57.0.22
+        Another coupon - changed base price 
+    4.57.0.23
+        Fix for expand and other settings being lost when element is made invisible and visible again.
+            Not ALL elements have been converted over to handle correctly... checking in to get the ball rolling and will complete the others today
+            So far Text, Input, Multiline, Frame, Statusbar, Combo are done
+    4.57.0.24
+        Fixed crach in the update method for Text element when making inivisible
+    4.57.0.25
+        Added propagate parameter to the bind methods.  Used to tell tkinter whether or not to propagate the event to the element / or window (thank you Jason!)
+    4.57.0.26
+        Completed the new way of saving the element's settings for visible/invisible. Was losing expand and other settings. Now all elements use this new scheme
+    4.57.0.27
+        Fixed bug in Tree and Table elements when using visible in the layout
+        Added an update method to Canvas
     """
 
 __version__ = version.split()[0]  # For PEP 396 and PEP 345
@@ -180,7 +234,6 @@ except Exception as e:
 
 import threading
 import itertools
-import os
 import json
 import configparser
 import queue
@@ -531,7 +584,7 @@ TABLE_SELECT_MODE_NONE = tk.NONE
 TABLE_SELECT_MODE_BROWSE = tk.BROWSE
 TABLE_SELECT_MODE_EXTENDED = tk.EXTENDED
 DEFAULT_TABLE_SELECT_MODE = TABLE_SELECT_MODE_EXTENDED
-
+TABLE_CLICKED_INDICATOR = '+CLICKED+'           # Part of the tuple returned as an event when a Table element has click events enabled
 DEFAULT_MODAL_WINDOWS_ENABLED = True
 
 TAB_LOCATION_TOP = 'top'
@@ -636,6 +689,8 @@ SYMBOL_LEFT = '◄'
 SYMBOL_DOWN = '▼'
 SYMBOL_X = '❎'
 SYMBOL_CHECK = '✅'
+SYMBOL_CHECK_SMALL = '✓'
+SYMBOL_X_SMALL = '✗'
 SYMBOL_BALLOT_X = '☒'
 SYMBOL_BALLOT_CHECK = '☑'
 SYMBOL_LEFT_DOUBLE = '«'
@@ -945,15 +1000,17 @@ class Element():
         self.metadata = metadata
         self.user_bind_dict = {}  # Used when user defines a tkinter binding using bind method - convert bind string to key modifier
         self.user_bind_event = None  # Used when user defines a tkinter binding using bind method - event data from tkinter
-        self.pad_used = (0, 0)  # the amount of pad used when was inserted into the layout
+        # self.pad_used = (0, 0)  # the amount of pad used when was inserted into the layout
         self._popup_menu_location = (None, None)
-
+        self.pack_settings = None
         if not hasattr(self, 'DisabledTextColor'):
             self.DisabledTextColor = None
         if not hasattr(self, 'ItemFont'):
             self.ItemFont = None
         if not hasattr(self, 'RightClickMenu'):
             self.RightClickMenu = None
+        if not hasattr(self, 'Disabled'):
+            self.Disabled = None        # in case the element hasn't defined this, add it here
 
     @property
     def visible(self):
@@ -981,6 +1038,31 @@ class Element():
         :type value:  (Any)
         """
         self._metadata = value
+
+    @property
+    def key(self):
+        """
+        Returns key for the element.  This is a READONLY property.
+        Keys can be any hashable object (basically anything except a list... tuples are ok, but not lists)
+        :return: The window's Key
+        :rtype:  (Any)
+        """
+        return self.Key
+
+
+
+    @property
+    def widget(self):
+        """
+        Returns tkinter widget for the element.  This is a READONLY property.
+        The implementation is that the Widget member variable is returned. This is a backward compatible addition
+        :return:    The element's underlying tkinter widget
+        :rtype:     (tkinter.Widget)
+        """
+        return self.Widget
+
+
+
 
     def _RightClickMenuCallback(self, event):
         """
@@ -1141,6 +1223,10 @@ class Element():
         :type event:
 
         """
+        # if the element is disabled, ignore the event
+        if self.Disabled:
+            return
+
         MyForm = self.ParentForm
         button_element = self._FindReturnKeyBoundButton(MyForm)
         if button_element is not None:
@@ -1189,10 +1275,13 @@ class Element():
         self._generic_callback_handler('')
 
 
-    def _SpinboxSelectHandler(self):
+    def _SpinboxSelectHandler(self, event=None):
         """
-        Internal callback function for when an entry is selected in a Combobox.
-
+        Internal callback function for when an entry is selected in a Spinbox.
+        Note that the parm is optional because it's not used if arrows are used to change the value
+        but if the return key is pressed, it will include the event parm
+        :param event: Event data passed in by tkinter (not used)
+        :type event:
         """
         self._generic_callback_handler('')
 
@@ -1224,6 +1313,10 @@ class Element():
         :param event: Event data passed in by tkinter (not used)
         :type event:
         """
+
+        # if the element is disabled, ignore the event
+        if self.Disabled:
+            return
         self._generic_callback_handler('')
 
     def _ClickHandler(self, event):
@@ -1235,7 +1328,7 @@ class Element():
         """
         self._generic_callback_handler('')
 
-    def _user_bind_callback(self, bind_string, event):
+    def _user_bind_callback(self, bind_string, event, propagate=True):
         """
         Used when user binds a tkinter event directly to an element
 
@@ -1243,6 +1336,8 @@ class Element():
         :type bind_string:  (str)
         :param event:       Event data passed in by tkinter (not used)
         :type event:        (Any)
+        :param propagate:   If True then tkinter will be told to propagate the event to the element
+        :type propagate:    (bool)
         """
         key_suffix = self.user_bind_dict.get(bind_string, '')
         self.user_bind_event = event
@@ -1259,7 +1354,10 @@ class Element():
 
         self._generic_callback_handler(force_key_to_be=key)
 
-    def bind(self, bind_string, key_modifier):
+        return 'break' if propagate is not True else None
+
+
+    def bind(self, bind_string, key_modifier, propagate=True):
         """
         Used to add tkinter events to an Element.
         The tkinter specific data is in the Element's member variable user_bind_event
@@ -1267,11 +1365,13 @@ class Element():
         :type bind_string:   (str)
         :param key_modifier: Additional data to be added to the element's key when event is returned
         :type key_modifier:  (str)
+        :param propagate:    If True then tkinter will be told to propagate the event to the element
+        :type propagate:     (bool)
         """
         if not self._widget_was_created():  # if widget hasn't been created yet, then don't allow
             return
 
-        self.Widget.bind(bind_string, lambda evt: self._user_bind_callback(bind_string, evt))
+        self.Widget.bind(bind_string, lambda evt: self._user_bind_callback(bind_string, evt, propagate))
         self.user_bind_dict[bind_string] = key_modifier
 
     def unbind(self, bind_string):
@@ -1308,14 +1408,16 @@ class Element():
         :param force: if True will call focus_force otherwise calls focus_set
         :type force:  bool
         """
-
+        if not self._widget_was_created():  # if widget hasn't been created yet, then don't allow
+            return
         try:
             if force:
                 self.Widget.focus_force()
             else:
                 self.Widget.focus_set()
-        except:
-            print('Was unable to set focus.  The Widget passed in was perhaps not present in this element?  Check your elements .Widget property')
+        except Exception as e:
+            _error_popup_with_traceback("Exception blocking focus. Check your element's Widget", e)
+
 
     def block_focus(self, block=True):
         """
@@ -1335,8 +1437,42 @@ class Element():
                 self.Widget.configure(takefocus=0)
             else:
                 self.Widget.configure(takefocus=1)
-        except:
-            print('Was unable to block the focus. Check your elements .Widget property')
+        except Exception as e:
+            _error_popup_with_traceback("Exception blocking focus. Check your element's Widget", e)
+
+
+    def get_next_focus(self):
+        """
+        Gets the next element that should get focus after this element.
+
+        :return:    Element that will get focus after this one
+        :rtype:     (Element)
+        """
+        if not self._widget_was_created():  # if widget hasn't been created yet, then don't allow
+            return None
+
+        try:
+            next_widget_focus = self.widget.tk_focusNext()
+            return self.ParentForm.widget_to_element(next_widget_focus)
+        except Exception as e:
+            _error_popup_with_traceback("Exception getting next focus. Check your element's Widget", e)
+
+
+    def get_previous_focus(self):
+        """
+        Gets the element that should get focus previous to this element.
+
+        :return:    Element that should get the focus before this one
+        :rtype:     (Element)
+        """
+        if not self._widget_was_created():  # if widget hasn't been created yet, then don't allow
+            return None
+        try:
+            next_widget_focus = self.widget.tk_focusPrev()      # tkinter.Widget
+            return self.ParentForm.widget_to_element(next_widget_focus)
+        except Exception as e:
+            _error_popup_with_traceback("Exception getting previous focus. Check your element's Widget", e)
+
 
     def set_size(self, size=(None, None)):
         """
@@ -1570,12 +1706,25 @@ class Element():
 
 
 
+    def _pack_forget_save_settings(self, optional_widget=None):
+        """
+        Performs a pack_forget which will make a widget invisible.
+        This method saves the pack settings so that they can be restored if the element is made visible again
 
+        :return:
+        """
+        if optional_widget is not None and self.widget is None:
+            return
+        widget = optional_widget if optional_widget is not None else self.widget
 
+        self.pack_settings = widget.pack_info()
+        widget.pack_forget()
 
-
-
-
+    def _pack_restore_settings(self, optional_widget=None):
+        if self.pack_settings is None:
+            return
+        widget = optional_widget if optional_widget is not None else self.widget
+        widget.pack(**self.pack_settings)
 
 
     def update(self, *args, **kwargs):
@@ -1708,7 +1857,7 @@ class Input(Element):
         super().__init__(ELEM_TYPE_INPUT_TEXT, size=sz, background_color=bg, text_color=fg, key=key, pad=pad,
                          font=font, tooltip=tooltip, visible=visible, metadata=metadata)
 
-    def update(self, value=None, disabled=None, select=None, visible=None, text_color=None, background_color=None, move_cursor_to='end', password_char=None):
+    def update(self, value=None, disabled=None, select=None, visible=None, text_color=None, background_color=None, move_cursor_to='end', password_char=None, paste=None):
         """
         Changes some of the settings for the Input Element. Must call `Window.Read` or `Window.Finalize` prior.
         Changes will not be visible in your window until you call window.read or window.refresh.
@@ -1733,6 +1882,8 @@ class Input(Element):
         :type move_cursor_to:    int | str
         :param password_char:    Password character if this is a password field
         :type password_char:     str
+        :param paste:            If True "Pastes" the value into the element rather than replacing the entire element. If anything is selected it is replaced. The text is inserted at the current cursor location.
+        :type paste:             bool
         """
         if not self._widget_was_created():  # if widget hasn't been created yet, then don't allow
             return
@@ -1745,11 +1896,18 @@ class Input(Element):
         if text_color not in (None, COLOR_SYSTEM_DEFAULT):
             self.TKEntry.configure(fg=text_color)
         if value is not None:
-            try:
-                self.TKStringVar.set(value)
-            except:
-                pass
+            if paste is not True:
+                try:
+                    self.TKStringVar.set(value)
+                except:
+                    pass
             self.DefaultText = value
+            if paste is True:
+                try:
+                    self.TKEntry.delete('sel.first', 'sel.last')
+                except:
+                    pass
+                self.TKEntry.insert("insert", value)
             if move_cursor_to == 'end':
                 self.TKEntry.icursor(tk.END)
             elif move_cursor_to is not None:
@@ -1757,9 +1915,11 @@ class Input(Element):
         if select:
             self.TKEntry.select_range(0, 'end')
         if visible is False:
-            self.TKEntry.pack_forget()
+            self._pack_forget_save_settings()
+            # self.TKEntry.pack_forget()
         elif visible is True:
-            self.TKEntry.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+            # self.TKEntry.pack(padx=self.pad_used[0], pady=self.pad_used[1])
             # self.TKEntry.pack(padx=self.pad_used[0], pady=self.pad_used[1], in_=self.ParentRowFrame)
         if visible is not None:
             self._visible = visible
@@ -1969,9 +2129,11 @@ class Combo(Element):
         if font is not None:
             self.TKCombo.configure(font=font)
         if visible is False:
-            self.TKCombo.pack_forget()
+            self._pack_forget_save_settings()
+            # self.TKCombo.pack_forget()
         elif visible is True:
-            self.TKCombo.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+            # self.TKCombo.pack(padx=self.pad_used[0], pady=self.pad_used[1])
         if visible is not None:
             self._visible = visible
 
@@ -2123,9 +2285,11 @@ class OptionMenu(Element):
         elif disabled == False:
             self.TKOptionMenu['state'] = 'normal'
         if visible is False:
-            self.TKOptionMenu.pack_forget()
+            self._pack_forget_save_settings()
+            # self.TKOptionMenu.pack_forget()
         elif visible is True:
-            self.TKOptionMenu.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+            # self.TKOptionMenu.pack(padx=self.pad_used[0], pady=self.pad_used[1])
         if visible is not None:
             self._visible = visible
 
@@ -2292,13 +2456,9 @@ class Listbox(Element):
                 except:
                     warnings.warn('* Listbox Update selection_set failed with index {}*'.format(set_to_index))
         if visible is False:
-            self.element_frame.pack_forget()
-            if not self.NoScrollbar:
-                self.vsb.pack_forget()
+            self._pack_forget_save_settings(self.element_frame)
         elif visible is True:
-            self.element_frame.pack(padx=self.pad_used[0], pady=self.pad_used[1])
-            if not self.NoScrollbar:
-                self.vsb.pack()
+            self._pack_restore_settings(self.element_frame)
         if scroll_to_index is not None and len(self.Values):
             self.TKListbox.yview_moveto(scroll_to_index / len(self.Values))
         if select_mode is not None:
@@ -2540,9 +2700,9 @@ class Radio(Element):
         elif disabled is False:
             self.TKRadio['state'] = 'normal'
         if visible is False:
-            self.TKRadio.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.TKRadio.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
         if visible is not None:
             self._visible = visible
 
@@ -2631,7 +2791,7 @@ class Checkbox(Element):
 
 
         self.Text = text
-        self.InitialState = default
+        self.InitialState = bool(default)
         self.Value = None
         self.TKCheckbutton = self.Widget = None  # type: tk.Checkbutton
         self.Disabled = disabled
@@ -2741,9 +2901,10 @@ class Checkbox(Element):
                 self.TKCheckbutton.configure(selectcolor=self.CheckboxBackgroundColor)  # The background of the checkbox
 
         if visible is False:
-            self.TKCheckbutton.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.TKCheckbutton.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+
         if visible is not None:
             self._visible = visible
 
@@ -2767,7 +2928,7 @@ class Spin(Element):
     """
 
     def __init__(self, values, initial_value=None, disabled=False, change_submits=False, enable_events=False, readonly=False,
-                 size=(None, None), s=(None, None), auto_size_text=None, font=None, background_color=None, text_color=None, key=None, k=None, pad=None, p=None,
+                 size=(None, None), s=(None, None), auto_size_text=None, bind_return_key=None, font=None, background_color=None, text_color=None, key=None, k=None, pad=None, p=None,
                  tooltip=None, right_click_menu=None, expand_x=False, expand_y=False, visible=True, metadata=None):
         """
         :param values:           List of valid values
@@ -2788,6 +2949,8 @@ class Spin(Element):
         :type s:                 (int, int)  | (None, None) | int
         :param auto_size_text:   if True will size the element to match the length of the text
         :type auto_size_text:    (bool)
+        :param bind_return_key:  If True, then the return key will cause a the element to generate an event
+        :type bind_return_key:   (bool)
         :param font:             specifies the  font family, size, etc. Tuple or Single string format 'name size styles'. Styles: italic * roman bold normal underline overstrike
         :type font:              (str or (str, int[, str]) or None)
         :param background_color: color of background
@@ -2824,6 +2987,7 @@ class Spin(Element):
         self.Disabled = disabled
         self.Readonly = readonly
         self.RightClickMenu = right_click_menu
+        self.BindReturnKey = bind_return_key
 
         bg = background_color if background_color else DEFAULT_INPUT_ELEMENTS_COLOR
         fg = text_color if text_color is not None else DEFAULT_INPUT_TEXT_COLOR
@@ -2893,11 +3057,12 @@ class Spin(Element):
                 self.TKSpinBox['state'] = 'normal'
 
         if visible is False:
-            self.TKSpinBox.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.TKSpinBox.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
         if visible is not None:
             self._visible = visible
+
 
     def _SpinChangedHandler(self, event):
         """
@@ -2951,7 +3116,7 @@ class Multiline(Element):
     """
 
     def __init__(self, default_text='', enter_submits=False, disabled=False, autoscroll=False, border_width=None,
-                 size=(None, None), s=(None, None), auto_size_text=None, background_color=None, text_color=None, change_submits=False,
+                 size=(None, None), s=(None, None), auto_size_text=None, background_color=None, text_color=None,  horizontal_scroll=False, change_submits=False,
                  enable_events=False, do_not_clear=True, key=None, k=None, write_only=False, auto_refresh=False, reroute_stdout=False, reroute_stderr=False, reroute_cprint=False, echo_stdout_stderr=False, focus=False, font=None, pad=None, p=None, tooltip=None, justification=None, no_scrollbar=False, expand_x=False, expand_y=False, rstrip=True, right_click_menu=None, visible=True, metadata=None):
         """
         :param default_text:       Initial text to show
@@ -2974,6 +3139,8 @@ class Multiline(Element):
         :type background_color:    (str)
         :param text_color:         color of the text
         :type text_color:          (str)
+        :param horizontal_scroll:  Controls if a horizontal scrollbar should be shown.  If True a horizontal scrollbar will be shown in addition to vertical
+        :type horizontal_scroll:   (bool)
         :param change_submits:     DO NOT USE. Only listed for backwards compat - Use enable_events instead
         :type change_submits:      (bool)
         :param enable_events:      Turns on the element specific events. Spin events happen when an item changes
@@ -3008,7 +3175,7 @@ class Multiline(Element):
         :type tooltip:             (str)
         :param justification:      text justification. left, right, center. Can use single characters l, r, c.
         :type justification:       (str)
-        :param no_scrollbar:       If False then a scrollbar will be shown (the default)
+        :param no_scrollbar:       If False then a vertical scrollbar will be shown (the default)
         :type no_scrollbar:        (bool)
         :param expand_x:           If True the element will automatically expand in the X direction to fill available space
         :type expand_x:            (bool)
@@ -3037,6 +3204,8 @@ class Multiline(Element):
         self.BorderWidth = border_width if border_width is not None else DEFAULT_BORDER_WIDTH
         self.TagCounter = 0
         self.TKText = self.Widget = None  # type: tkst.ScrolledText
+        self.element_frame = None  # type: tk.Frame
+        self.HorizontalScroll = horizontal_scroll
         self.tags = set()
         self.WriteOnly = write_only
         self.AutoRefresh = auto_refresh
@@ -3056,6 +3225,7 @@ class Multiline(Element):
         if reroute_stderr:
             self.reroute_stderr_to_here()
         self.no_scrollbar = no_scrollbar
+        self.hscrollbar = None      # The horizontal scrollbar
         sz = size if size != (None, None) else s
 
         super().__init__(ELEM_TYPE_INPUT_MULTILINE, size=sz, auto_size_text=auto_size_text, background_color=bg,
@@ -3164,10 +3334,14 @@ class Multiline(Element):
             self.TKText.configure(fg=text_color)
         if font is not None:
             self.TKText.configure(font=font)
+
+
         if visible is False:
-            self.TKText.pack_forget()
+            self._pack_forget_save_settings(optional_widget=self.element_frame)
+            # self.element_frame.pack_forget()
         elif visible is True:
-            self.TKText.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings(optional_widget=self.element_frame)
+            # self.element_frame.pack(padx=self.pad_used[0], pady=self.pad_used[1])
 
         if self.AutoRefresh and self.ParentForm:
             try:  # in case the window was destroyed
@@ -3447,9 +3621,11 @@ class Text(Element):
         if font is not None:
             self.TKText.configure(font=font)
         if visible is False:
-            self.TKText.pack_forget()
+            self._pack_forget_save_settings()
+            # self.TKText.pack_forget()
         elif visible is True:
-            self.TKText.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+            # self.TKText.pack(padx=self.pad_used[0], pady=self.pad_used[1])
         if visible is not None:
             self._visible = visible
 
@@ -3468,6 +3644,23 @@ class Text(Element):
 
 
     @classmethod
+    def fonts_installed_list(cls):
+        """
+        Returns a list of strings that tkinter reports as the installed fonts
+
+        :return:          List of the installed font names
+        :rtype:           List[str]
+        """
+        # A window must exist before can perform this operation. Create the hidden master root if it doesn't exist
+        _get_hidden_master_root()
+
+        fonts = list(tkinter.font.families())
+        fonts.sort()
+
+        return fonts
+
+
+    @classmethod
     def char_width_in_pixels(cls, font, character='W'):
         """
         Get the with of the character "W" in pixels for the font being passed in or
@@ -3481,20 +3674,14 @@ class Text(Element):
         :return:          Width in pixels of "A"
         :rtype:           (int)
         """
-        # if no windows have been created (there is no hidden master root to rely on) then temporarily make a window so the measurement can happen
-        if Window.NumOpenWindows == 0:
-            root = tk.Tk()
-        else:
-            root = None
+        # A window must exist before can perform this operation. Create the hidden master root if it doesn't exist
+        _get_hidden_master_root()
 
         size = 0
         try:
             size = tkinter.font.Font(font=font).measure(character)  # single character width
         except Exception as e:
             _error_popup_with_traceback('Exception retrieving char width in pixels', e)
-
-        if root is not None:
-            root.destroy()
 
         return size
 
@@ -3510,19 +3697,15 @@ class Text(Element):
         :rtype:      (int)
         """
 
-        # if no windows have been created (there is no hidden master root to rely on) then temporarily make a window so the measurement can happen
-        if Window.NumOpenWindows == 0:
-            root = tk.Tk()
-        else:
-            root = None
+        # A window must exist before can perform this operation. Create the hidden master root if it doesn't exist
+        _get_hidden_master_root()
+
 
         size = 0
         try:
             size = tkinter.font.Font(font=font).metrics('linespace')
         except Exception as e:
             _error_popup_with_traceback('Exception retrieving char height in pixels', e)
-        if root is not None:
-            root.destroy()
 
         return size
 
@@ -3539,20 +3722,14 @@ class Text(Element):
         :rtype:        (int)
         """
 
-        # if no windows have been created (there is no hidden master root to rely on) then temporarily make a window so the measurement can happen
-        if Window.NumOpenWindows == 0:
-            root = tk.Tk()
-        else:
-            root = None
+        # A window must exist before can perform this operation. Create the hidden master root if it doesn't exist
+        _get_hidden_master_root()
 
         size = 0
         try:
             size = tkinter.font.Font(font=font).measure(string)  # string's  width
         except Exception as e:
             _error_popup_with_traceback('Exception retrieving string width in pixels', e)
-
-        if root is not None:
-            root.destroy()
 
         return size
 
@@ -3786,9 +3963,11 @@ class StatusBar(Element):
         if font is not None:
             self.TKText.configure(font=font)
         if visible is False:
-            self.TKText.pack_forget()
+            self._pack_forget_save_settings()
+            # self.TKText.pack_forget()
         elif visible is True:
-            self.TKText.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+            # self.TKText.pack(padx=self.pad_used[0], pady=self.pad_used[1])
         if visible is not None:
             self._visible = visible
 
@@ -4097,9 +4276,10 @@ class Output(Element):
             self._TKOut.output.delete('1.0', tk.END)
             self._TKOut.output.insert(tk.END, value)
         if visible is False:
-            self._TKOut.frame.pack_forget()
+            self._pack_forget_save_settings(self._TKOut.frame)
         elif visible is True:
-            self._TKOut.frame.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings(self._TKOut.frame)
+
         if visible is not None:
             self._visible = visible
 
@@ -4157,7 +4337,7 @@ class Button(Element):
     def __init__(self, button_text='', button_type=BUTTON_TYPE_READ_FORM, target=(None, None), tooltip=None,
                  file_types=FILE_TYPES_ALL_FILES, initial_folder=None, default_extension='', disabled=False, change_submits=False,
                  enable_events=False, image_filename=None, image_data=None, image_size=(None, None),
-                 image_subsample=None, border_width=None, size=(None, None), s=(None, None), auto_size_button=None, button_color=None,
+                 image_subsample=None, image_source=None, border_width=None, size=(None, None), s=(None, None), auto_size_button=None, button_color=None,
                  disabled_button_color=None,
                  highlight_colors=None, mouseover_colors=(None, None), use_ttk_buttons=None, font=None, bind_return_key=False, focus=False, pad=None, p=None, key=None,
                  k=None, right_click_menu=None, expand_x=False, expand_y=False, visible=True, metadata=None):
@@ -4182,6 +4362,8 @@ class Button(Element):
         :type change_submits:         (bool)
         :param enable_events:         Turns on the element specific events. If this button is a target, should it generate an event when filled in
         :type enable_events:          (bool)
+        :param image_source:          Image to place on button. Use INSTEAD of the image_filename and image_data. Unifies these into 1 easier to use parm
+        :type image_source:           (str | bytes)
         :param image_filename:        image filename if there is a button image. GIFs and PNGs only.
         :type image_filename:         (str)
         :param image_data:            Raw or Base64 representation of the image to put on button. Choose either filename or data
@@ -4265,6 +4447,11 @@ class Button(Element):
         #     except:
         #         print('* Problem computing disabled button color *')
         self.DisabledButtonColor = button_color_to_tuple(disabled_button_color) if disabled_button_color is not None else (None, None)
+        if image_source is not None:
+            if isinstance(image_source, bytes):
+                image_data = image_source
+            elif isinstance(image_source, str):
+                image_filename = image_source
         self.ImageFilename = image_filename
         self.ImageData = image_data
         self.ImageSize = image_size
@@ -4452,6 +4639,8 @@ class Button(Element):
                     self.TKStringVar.set(folder_name)
                 except:
                     pass
+            else:  # if "cancel" button clicked, don't generate an event
+                should_submit_window = False
         elif self.BType == BUTTON_TYPE_BROWSE_FILE:
             if running_mac():
                 file_name = tk.filedialog.askopenfilename(initialdir=self.InitialFolder)  # show the 'get file' dialog box
@@ -4461,6 +4650,8 @@ class Button(Element):
             if file_name:
                 strvar.set(file_name)
                 self.TKStringVar.set(file_name)
+            else:           # if "cancel" button clicked, don't generate an event
+                should_submit_window = False
         elif self.BType == BUTTON_TYPE_COLOR_CHOOSER:
             color = tk.colorchooser.askcolor(parent=self.ParentForm.TKroot)  # show the 'get file' dialog box
             color = color[1]  # save only the #RRGGBB portion
@@ -4475,6 +4666,8 @@ class Button(Element):
                 file_name = self._files_delimiter.join(file_name)  # normally a ';'
                 strvar.set(file_name)
                 self.TKStringVar.set(file_name)
+            else:           # if "cancel" button clicked, don't generate an event
+                should_submit_window = False
         elif self.BType == BUTTON_TYPE_SAVEAS_FILE:
             # show the 'get file' dialog box
             if running_mac():
@@ -4485,6 +4678,8 @@ class Button(Element):
             if file_name:
                 strvar.set(file_name)
                 self.TKStringVar.set(file_name)
+            else:           # if "cancel" button clicked, don't generate an event
+                should_submit_window = False
         elif self.BType == BUTTON_TYPE_CLOSES_WIN:  # this is a return type button so GET RESULTS and destroy window
             # first, get the results table built
             # modify the Results table in the parent FlexForm object
@@ -4626,9 +4821,9 @@ class Button(Element):
                 self.TKButton.config(highlightthickness=0, image=image, width=width, height=height)
             self.TKButton.image = image
         if visible is False:
-            self.TKButton.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.TKButton.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
         if disabled_button_color != (None, None) and disabled_button_color != COLOR_SYSTEM_DEFAULT:
             if not self.UseTtkButtons:
                 self.TKButton['disabledforeground'] = disabled_button_color[0]
@@ -4785,6 +4980,7 @@ class ButtonMenu(Element):
                          text_color=self.TextColor, background_color=self.BackgroundColor, visible=visible, metadata=metadata)
         self.Tearoff = tearoff
 
+
     def _MenuItemChosenCallback(self, item_chosen):  # ButtonMenu Menu Item Chosen Callback
         """
         Not a user callable function.  Called by tkinter when an item is chosen from the menu.
@@ -4800,7 +4996,8 @@ class ButtonMenu(Element):
         #     self.ParentForm.TKroot.quit()  # kick the users out of the mainloop
         _exit_mainloop(self.ParentForm)
 
-    def update(self, menu_definition=None, visible=None, image_source=None, image_size=(None, None), image_subsample=None):
+
+    def update(self, menu_definition=None, visible=None, image_source=None, image_size=(None, None), image_subsample=None, button_text=None):
         """
         Changes some of the settings for the ButtonMenu Element. Must call `Window.Read` or `Window.Finalize` prior
 
@@ -4820,6 +5017,8 @@ class ButtonMenu(Element):
         :type image_size:       (int, int)
         :param image_subsample: amount to reduce the size of the image. Divides the size by this number. 2=1/2, 3=1/3, 4=1/4, etc
         :type image_subsample:  (int)
+        :param button_text:     Text to be shown on the button
+        :type button_text:      (str)
         """
 
         if not self._widget_was_created():  # if widget hasn't been created yet, then don't allow
@@ -4870,15 +5069,17 @@ class ButtonMenu(Element):
 
                 self.TKButtonMenu.config(image=image, compound=tk.CENTER, width=width, height=height)
                 self.TKButtonMenu.image = image
-
+        if button_text is not None:
+            self.TKButtonMenu.configure(text=button_text)
+            self.ButtonText = button_text
         if visible is False:
-            self.TKButtonMenu.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.TKButtonMenu.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
         if visible is not None:
             self._visible = visible
 
-    def Click(self):
+    def click(self):
         """
         Generates a click of the button as if the user clicked the button
         Calls the tkinter invoke method for the button
@@ -4889,7 +5090,7 @@ class ButtonMenu(Element):
             print('Exception clicking button')
 
     Update = update
-
+    Click = click
 
 BMenu = ButtonMenu
 BM = ButtonMenu
@@ -5027,9 +5228,10 @@ class ProgressBar(Element):
             return False
 
         if visible is False:
-            self.TKProgressBar.TKProgressBarForReal.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.TKProgressBar.TKProgressBarForReal.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+
         if visible is not None:
             self._visible = visible
         if bar_color is not None:
@@ -5177,9 +5379,13 @@ class Image(Element):
 
         image = None
         if filename is not None:
-            image = tk.PhotoImage(file=filename)
-            if subsample is not None:
-                image = image.subsample(subsample)
+            try:
+                image = tk.PhotoImage(file=filename)
+                if subsample is not None:
+                    image = image.subsample(subsample)
+            except Exception as e:
+                _error_popup_with_traceback('Exception updating Image element', e)
+
         elif data is not None:
             # if type(data) is bytes:
             try:
@@ -5201,9 +5407,10 @@ class Image(Element):
                 _error_popup_with_traceback('Exception updating Image element', e)
             self.tktext_label.image = image
         if visible is False:
-            self.tktext_label.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.tktext_label.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+
         # if everything is set to None, then delete the image
         if filename is None and image is None and visible is None and size == (None, None):
             # Using a try because the image may have been previously deleted and don't want an error if that's happened
@@ -5363,7 +5570,7 @@ class Canvas(Element):
 
 
         self.BackgroundColor = background_color if background_color is not None else DEFAULT_BACKGROUND_COLOR
-        self._TKCanvas = canvas
+        self._TKCanvas = self.Widget = canvas
         self.RightClickMenu = right_click_menu
         self.BorderWidth = border_width
         key = key if key is not None else k
@@ -5375,6 +5582,29 @@ class Canvas(Element):
         super().__init__(ELEM_TYPE_CANVAS, background_color=background_color, size=sz, pad=pad, key=key,
                          tooltip=tooltip, visible=visible, metadata=metadata)
         return
+
+
+    def update(self,  background_color=None, visible=None):
+        """
+
+        :param background_color: color of background
+        :type background_color:  (str)
+        :param visible:          set visibility state of the element
+        :type visible:           (bool)
+        """
+
+        if not self._widget_was_created():  # if widget hasn't been created yet, then don't allow
+            return
+
+        if background_color not in (None, COLOR_SYSTEM_DEFAULT):
+            self._TKCanvas.configure(background=background_color)
+        if visible is False:
+            self._pack_forget_save_settings()
+        elif visible is True:
+            self._pack_restore_settings()
+        if visible is not None:
+            self._visible = visible
+
 
     @property
     def tk_canvas(self):
@@ -5426,11 +5656,11 @@ class Graph(Element):
         :type p:                  (int, int) or ((int, int),(int,int)) or (int,(int,int)) or  ((int, int),int) | int
         :param change_submits:    * DEPRICATED DO NOT USE. Use `enable_events` instead
         :type change_submits:     (bool)
-        :param drag_submits:      if True and Events are enabled for the Graph, will report Events any time the mouse moves while button down
+        :param drag_submits:      if True and Events are enabled for the Graph, will report Events any time the mouse moves while button down.  When the mouse button is released, you'll get an event = graph key + '+UP' (if key is a string.. if not a string, it'll be made into a tuple)
         :type drag_submits:       (bool)
         :param enable_events:     If True then clicks on the Graph are immediately reported as an event. Use this instead of change_submits
         :type enable_events:      (bool)
-        :param motion_events:     If True then if no button is down and the mouse is moved, an event is generated with key = graph key + '+MOVE' (if key is a string)
+        :param motion_events:     If True then if no button is down and the mouse is moved, an event is generated with key = graph key + '+MOVE' (if key is a string, it not a string then a tuple is returned)
         :type motion_events:      (bool)
         :param key:               Value that uniquely identifies this element from all other elements. Used when Finding an element or in return values. Must be unique to the window
         :type key:                str | int | tuple | object
@@ -5888,10 +6118,12 @@ class Graph(Element):
 
         if background_color is not None and background_color != COLOR_SYSTEM_DEFAULT:
             self._TKCanvas2.configure(background=background_color)
+
         if visible is False:
-            self._TKCanvas2.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self._TKCanvas2.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+
         if visible is not None:
             self._visible = visible
 
@@ -6352,9 +6584,11 @@ class Frame(Element):
             return
 
         if visible is False:
-            self.TKFrame.pack_forget()
+            self._pack_forget_save_settings()
+            # self.TKFrame.pack_forget()
         elif visible is True:
-            self.TKFrame.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+            # self.TKFrame.pack(padx=self.pad_used[0], pady=self.pad_used[1])
         if value is not None:
             self.TKFrame.config(text=str(value))
         if visible is not None:
@@ -7149,10 +7383,12 @@ class Slider(Element):
             self.TKScale['state'] = 'disabled'
         elif disabled == False:
             self.TKScale['state'] = 'normal'
+
         if visible is False:
-            self.TKScale.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.TKScale.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+
         if visible is not None:
             self._visible = visible
 
@@ -7521,12 +7757,14 @@ class Column(Element):
 
         if visible is False:
             if self.TKColFrame:
-                self.TKColFrame.pack_forget()
+                self._pack_forget_save_settings()
+                # self.TKColFrame.pack_forget()
             if self.ParentPanedWindow:
                 self.ParentPanedWindow.remove(self.TKColFrame)
         elif visible is True:
             if self.TKColFrame:
-                self.TKColFrame.pack(padx=self.pad_used[0], pady=self.pad_used[1], fill=expand)
+                self._pack_restore_settings()
+                # self.TKColFrame.pack(padx=self.pad_used[0], pady=self.pad_used[1], fill=expand)
             if self.ParentPanedWindow:
                 self.ParentPanedWindow.add(self.TKColFrame)
         if visible is not None:
@@ -7638,11 +7876,11 @@ class Pane(Element):
         """
         if not self._widget_was_created():  # if widget hasn't been created yet, then don't allow
             return
-
         if visible is False:
-            self.PanedWindow.pack_forget()
+            self._pack_forget_save_settings()
         elif visible is True:
-            self.PanedWindow.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings()
+
         if visible is not None:
             self._visible = visible
 
@@ -8230,9 +8468,10 @@ class Table(Element):
             self.Values = values
             self.SelectedRows = []
         if visible is False:
-            self.TKTreeview.pack_forget()
+            self._pack_forget_save_settings(self.element_frame)
         elif visible is True:
-            self.TKTreeview.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings(self.element_frame)
+
         if num_rows is not None:
             self.TKTreeview.config(height=num_rows)
         if select_rows is not None:
@@ -8345,7 +8584,7 @@ class Table(Element):
         # print('The new selected rows = ', self.SelectedRows)
         if self.enable_click_events is True:
             if self.Key is not None:
-                self.ParentForm.LastButtonClicked = (self.Key, '+CICKED+', (row, column))
+                self.ParentForm.LastButtonClicked = (self.Key, TABLE_CLICKED_INDICATOR, (row, column))
             else:
                 self.ParentForm.LastButtonClicked = ''
             self.ParentForm.FormRemainedOpen = True
@@ -8638,9 +8877,10 @@ class Tree(Element):
                     pass
             # item = self.TKTreeview.item(id)
         if visible is False:
-            self.TKTreeview.pack_forget()
+            self._pack_forget_save_settings(self.element_frame)
         elif visible is True:
-            self.TKTreeview.pack(padx=self.pad_used[0], pady=self.pad_used[1])
+            self._pack_restore_settings(self.element_frame)
+
         if visible is not None:
             self._visible = visible
 
@@ -9056,6 +9296,8 @@ class Window:
         self.RightClickMenu = right_click_menu
         self.Margins = margins if margins != (None, None) else DEFAULT_MARGINS
         self.ContainerElemementNumber = Window._GetAContainerNumber()
+        # The dictionary containing all elements and keys for the window
+        # The keys are the keys for the elements and the values are the elements themselves.
         self.AllKeysDict = {}
         self.TransparentColor = transparent_color
         self.UniqueKeyCounter = 0
@@ -9161,10 +9403,9 @@ class Window:
         :return: Size of the screen in pixels as determined by tkinter
         :rtype:  (int, int)
         """
-        root = tk.Tk()
+        root = _get_hidden_master_root()
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
-        root.destroy()
         return screen_width, screen_height
 
     @property
@@ -9572,6 +9813,11 @@ class Window:
         if not Window._read_call_from_debugger:
             _refresh_debugger()
 
+        # if the user has not added timeout and a debug window is open, then set a timeout for them so the debugger continuously refreshes
+        if _debugger_window_is_open() and not Window._read_call_from_debugger:
+            if timeout is None or timeout > 3000:
+                timeout = 200
+
         Window._root_running_mainloop = self.TKroot
 
         while True:
@@ -9948,6 +10194,24 @@ class Window:
         """
         element = _FindElementWithFocusInSubForm(self)
         return element
+
+
+    def widget_to_element(self, widget):
+        """
+        Returns the element that matches a supplied tkinter widget.
+        If no matching element is found, then None is returned.
+
+
+        :return:    Element that uses the specified widget
+        :rtype:     Element | None
+        """
+        if self.AllKeysDict is None or len(self.AllKeysDict) == 0:
+            return None
+        for key, element in self.AllKeysDict.items():
+            if element.Widget == widget:
+                return element
+        return None
+
 
     def _BuildKeyDict(self):
         """
@@ -10750,7 +11014,7 @@ class Window:
         self.TKroot.unbind("<ButtonRelease-1>")
         self.TKroot.unbind("<B1-Motion>")
 
-    def _user_bind_callback(self, bind_string, event):
+    def _user_bind_callback(self, bind_string, event, propagate=True):
         """
         Used when user binds a tkinter event directly to an element
 
@@ -10758,6 +11022,8 @@ class Window:
         :type bind_string:  (str)
         :param event:       Event data passed in by tkinter (not used)
         :type event:
+        :param propagate:   If True then tkinter will be told to propagate the event
+        :type propagate:    (bool)
         """
         # print('bind callback', bind_string, event)
         key = self.user_bind_dict.get(bind_string, '')
@@ -10770,8 +11036,10 @@ class Window:
         # if self.CurrentlyRunningMainloop:
         #     self.TKroot.quit()
         _exit_mainloop(self)
+        return 'break' if propagate is not True else None
 
-    def bind(self, bind_string, key):
+
+    def bind(self, bind_string, key, propagate=True):
         """
         Used to add tkinter events to a Window.
         The tkinter specific data is in the Window's member variable user_bind_event
@@ -10779,31 +11047,39 @@ class Window:
         :type bind_string:  (str)
         :param key:         The event that will be generated when the tkinter event occurs
         :type key:          str | int | tuple | object
+        :param propagate:   If True then tkinter will be told to propagate the event
+        :type propagate:    (bool)
         """
         if not self._is_window_created('tried Window.bind'):
             return
-        self.TKroot.bind(bind_string, lambda evt: self._user_bind_callback(bind_string, evt))
+        self.TKroot.bind(bind_string, lambda evt: self._user_bind_callback(bind_string, evt, propagate))
         self.user_bind_dict[bind_string] = key
 
     def _callback_main_debugger_window_create_keystroke(self, event):
         """
         Called when user presses the key that creates the main debugger window
-
+        March 2022 - now causes the user reads to return timeout events automatically
         :param event: (event) not used. Passed in event info
         :type event:
         """
         Window._main_debug_window_build_needed = True
-        # _Debugger.debugger._build_main_debugger_window()
+        # exit the event loop in a way that resembles a timeout occurring
+        self.LastButtonClicked = self.TimeoutKey
+        self.FormRemainedOpen = True
+        self.TKroot.quit()  # kick the users out of the mainloop
 
     def _callback_popout_window_create_keystroke(self, event):
         """
         Called when user presses the key that creates the floating debugger window
-
+        March 2022 - now causes the user reads to return timeout events automatically
         :param event: (event) not used. Passed in event info
         :type event:
         """
         Window._floating_debug_window_build_needed = True
-        # _Debugger.debugger._build_floating_window()
+        # exit the event loop in a way that resembles a timeout occurring
+        self.LastButtonClicked = self.TimeoutKey
+        self.FormRemainedOpen = True
+        self.TKroot.quit()  # kick the users out of the mainloop
 
     def enable_debugger(self):
         """
@@ -11026,6 +11302,16 @@ class Window:
         Call your function that will take a long time to execute.  When it's complete, send an event
         specified by the end_key.
 
+        Starts a thread on your behalf.
+
+        This is a way for you to "ease into" threading without learning the details of threading.
+        Your function will run, and when it returns 2 things will happen:
+        1. The value you provide for end_key will be returned to you when you call window.read()
+        2. If your function returns a value, then the value returned will also be included in your windows.read call in the values dictionary
+
+        IMPORTANT - This method uses THREADS... this means you CANNOT make any PySimpleGUI calls from
+        the function you provide with the exception of one function, Window.write_event_value.
+
         :param func:    A lambda or a function name with no parms
         :type func:     Any
         :param end_key: The key that will be generated when the function returns
@@ -11139,7 +11425,7 @@ class Window:
     VisibilityChanged = visibility_changed
     CloseNonBlocking = close
     CloseNonBlockingForm = close
-
+    start_thread = perform_long_operation
     #
     # def __exit__(self, *a):
     #     """
@@ -11725,17 +12011,17 @@ def Titlebar(title='', icon=None, text_color=None, background_color=None, font=N
     NOTE LINUX USERS - at the moment the minimize function is not yet working.  Windows users
     should have no problem and it should function as a normal window would.
 
-    This titlebar is created from a row of elements that is then encapulated into a
-    single Column element which is what the Titlebar returns to you.
+    This titlebar is created from a row of elements that is then encapsulated into a
+    one Column element which is what this Titlebar function returns to you.
 
-    A custom titlebar removes the margins from your window.  Ify ou want the  remainder
+    A custom titlebar removes the margins from your window.  If you want the  remainder
     of your Window to have margins, place the layout after the Titlebar into a Column and
     set the pad of that Column to the dimensions you would like your margins to have.
 
     The Titlebar is a COLUMN element.  You can thus call the update method for the column and
     perform operations such as making the column visible/invisible
 
-    :param icon:             Can be either a filename or Base64 byte string of a PNG. For Windows if filename, it MUST be ICO format. For Linux, must NOT be ICO
+    :param icon:             Can be either a filename or Base64 byte string of a PNG or GIF. This is used in an Image element to create the titlebar
     :type icon:              str or bytes or None
     :param title:            The "title" to show in the titlebar
     :type title:             str
@@ -14022,7 +14308,7 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
             # Set foreground color
             text_color = element.TextColor
             elementpad = element.Pad if element.Pad is not None else toplevel_form.ElementPadding
-            element.pad_used = elementpad  # store the value used back into the element
+            # element.pad_used = elementpad  # store the value used back into the element
             # Determine Element size
             element_size = element.Size
             if (element_size == (None, None) and element_type not in (
@@ -14133,12 +14419,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
 
                 # element.TKColFrame.pack(side=side, padx=elementpad[0], pady=elementpad[1], expand=True, fill='both')
                 if element.visible is False:
-                    element.TKColFrame.pack_forget()
-                # element.TKColFrame = element.TKColFrame
-                # if element.BackgroundColor != COLOR_SYSTEM_DEFAULT and element.BackgroundColor is not None:
-                #     element.TKColFrame.configure(background=element.BackgroundColor,
-                #                                  highlightbackground=element.BackgroundColor,
-                #                                  highlightcolor=element.BackgroundColor)
+                    element._pack_forget_save_settings()
+                    # element.TKColFrame.pack_forget()
 
                 _add_right_click_menu_and_grab(element)
                 # if element.Grab:
@@ -14176,7 +14458,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 element.PanedWindow.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 # element.PanedWindow.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=True, fill='both')
                 if element.visible is False:
-                    element.PanedWindow.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element.PanedWindow.pack_forget()
             # -------------------------  TEXT placement element  ------------------------- #
             elif element_type == ELEM_TYPE_TEXT:
                 # auto_size_text = element.AutoSizeText
@@ -14226,7 +14509,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 tktext_label.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    tktext_label.pack_forget()
+                    element._pack_forget_save_settings()
+                    # tktext_label.pack_forget()
                 element.TKText = tktext_label
                 if element.ClickSubmits:
                     tktext_label.bind('<Button-1>', element._TextClickedHandler)
@@ -14263,13 +14547,12 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
 
                 bd = element.BorderWidth
 
+                tkbutton = element.Widget = tk.Button(tk_row_frame, text=btext, width=width, height=height, justify=tk.CENTER, bd=bd, font=font)
                 try:
                     if btype != BUTTON_TYPE_REALTIME:
-                        tkbutton = element.Widget = tk.Button(tk_row_frame, text=btext, width=width, height=height,
-                                                              command=element.ButtonCallBack, justify=tk.CENTER, bd=bd, font=font)
+                        tkbutton.config( command=element.ButtonCallBack)
+
                     else:
-                        tkbutton = element.Widget = tk.Button(tk_row_frame, text=btext, width=width, height=height,
-                                                              justify=tk.CENTER, bd=bd, font=font)
                         tkbutton.bind('<ButtonRelease-1>', element.ButtonReleaseCallBack)
                         tkbutton.bind('<ButtonPress-1>', element.ButtonPressCallBack)
                     if bc != (None, None) and COLOR_SYSTEM_DEFAULT not in bc:
@@ -14337,7 +14620,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
 
                 tkbutton.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    tkbutton.pack_forget()
+                    element._pack_forget_save_settings()
+                    # tkbutton.pack_forget()
                 if element.BindReturnKey:
                     element.TKButton.bind('<Return>', element._ReturnKeyHandler)
                 if element.Focus is True or (toplevel_form.UseDefaultFocus and not toplevel_form.FocusSet):
@@ -14397,10 +14681,10 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 else:
                     bc = DEFAULT_BUTTON_COLOR
                 bd = element.BorderWidth
+                tkbutton = element.Widget = ttk.Button(tk_row_frame, text=btext, width=width)
                 if btype != BUTTON_TYPE_REALTIME:
-                    tkbutton = element.Widget = ttk.Button(tk_row_frame, text=btext, width=width, command=element.ButtonCallBack)
+                    tkbutton.config(command=element.ButtonCallBack)
                 else:
-                    tkbutton = element.Widget = ttk.Button(tk_row_frame, text=btext, width=width)
                     tkbutton.bind('<ButtonRelease-1>', element.ButtonReleaseCallBack)
                     tkbutton.bind('<ButtonPress-1>', element.ButtonPressCallBack)
                 # Window._counter_for_ttk_widgets += 1
@@ -14473,7 +14757,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 tkbutton.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    tkbutton.pack_forget()
+                    element._pack_forget_save_settings()
+                    # tkbutton.pack_forget()
                 if element.BindReturnKey:
                     element.TKButton.bind('<Return>', element._ReturnKeyHandler)
                 if element.Focus is True or (toplevel_form.UseDefaultFocus and not toplevel_form.FocusSet):
@@ -14570,7 +14855,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 tkbutton.configure(menu=top_menu)
                 element.TKMenu = top_menu
                 if element.visible is False:
-                    tkbutton.pack_forget()
+                    element._pack_forget_save_settings()
+                    # tkbutton.pack_forget()
                 if element.Disabled == True:
                     element.TKButton['state'] = 'disabled'
                 if element.Tooltip is not None:
@@ -14612,7 +14898,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKEntry.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    element.TKEntry.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element.TKEntry.pack_forget()
                 if element.Focus is True or (toplevel_form.UseDefaultFocus and not toplevel_form.FocusSet):
                     toplevel_form.FocusSet = True
                     element.TKEntry.focus_set()
@@ -14690,7 +14977,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKCombo.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    element.TKCombo.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element.TKCombo.pack_forget()
                 if element.DefaultValue is not None:
                     element.TKCombo.set(element.DefaultValue)
                     # for i, v in enumerate(element.Values):
@@ -14734,7 +15022,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKOptionMenu.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    element.TKOptionMenu.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element.TKOptionMenu.pack_forget()
                 if element.Disabled == True:
                     element.TKOptionMenu['state'] = 'disabled'
                 if element.Tooltip is not None:
@@ -14793,8 +15082,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 element_frame.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], fill=fill, expand=expand)
                 element.TKListbox.pack(side=tk.LEFT, fill=fill, expand=expand)
                 if element.visible is False:
-                    element_frame.pack_forget()
-                    element.vsb.pack_forget()
+                    element._pack_forget_save_settings(optional_widget=element_frame)
+                    # element_frame.pack_forget()
                 if element.BindReturnKey:
                     element.TKListbox.bind('<Return>', element._ListboxSelectHandler)
                     element.TKListbox.bind('<Double-Button-1>', element._ListboxSelectHandler)
@@ -14810,11 +15099,27 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 element = element  # type: Multiline
                 width, height = element_size
                 bd = element.BorderWidth
+                element.element_frame = element_frame = tk.Frame(tk_row_frame)
+
                 if element.no_scrollbar:
-                    element.TKText = element.Widget = tk.Text(tk_row_frame, width=width, height=height, wrap='word', bd=bd, font=font, relief=RELIEF_SUNKEN)
+                    element.TKText = element.Widget = tk.Text(element_frame, width=width, height=height,  bd=bd, font=font, relief=RELIEF_SUNKEN)
                 else:
-                    element.TKText = element.Widget = tk.scrolledtext.ScrolledText(tk_row_frame, width=width, height=height, wrap='word', bd=bd, font=font,
-                                                                                   relief=RELIEF_SUNKEN)
+                    element.TKText = element.Widget = tk.scrolledtext.ScrolledText(element_frame, width=width, height=height, bd=bd, font=font, relief=RELIEF_SUNKEN)
+
+                # Horizontal scrollbar
+                if element.HorizontalScroll:
+                    element.TKText.config(wrap='none')
+                    hscrollbar = tk.Scrollbar(element_frame, orient=tk.HORIZONTAL)
+                    hscrollbar.pack(side=tk.BOTTOM, fill='x')
+                    hscrollbar.config(command=element.Widget.xview)
+                    element.Widget.configure(xscrollcommand=hscrollbar.set)
+                    element.hscrollbar = hscrollbar
+
+                    # Chr0nic
+                    element.TKText.bind("<Enter>", lambda event, em=element: testMouseHook(em))
+                    element.TKText.bind("<Leave>", lambda event, em=element: testMouseUnhook(em))
+                else:
+                    element.TKText.config(wrap='word')
                 if element.DefaultText:
                     element.TKText.insert(1.0, element.DefaultText)  # set the default text
                 element.TKText.config(highlightthickness=0)
@@ -14838,11 +15143,12 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 #     element.TKText.vbar.config(troughcolor=DEFAULT_SCROLLBAR_COLOR)
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
 
-                element.TKText.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], fill=fill, expand=expand)
-
+                element.element_frame.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], fill=fill, expand=expand)
+                element.Widget.pack(side=tk.LEFT, fill=fill, expand=expand)
 
                 if element.visible is False:
-                    element.TKText.pack_forget()
+                    element._pack_forget_save_settings(optional_widget=element_frame)
+                    # element.element_frame.pack_forget()
                 else:
                     # Chr0nic
                     element.TKText.bind("<Enter>", lambda event, em=element: testMouseHook(em))
@@ -14876,17 +15182,13 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 default_value = element.InitialState
                 element.TKIntVar = tk.IntVar()
                 element.TKIntVar.set(default_value if default_value is not None else 0)
-                if element.ChangeSubmits:
-                    element.TKCheckbutton = element.Widget = tk.Checkbutton(tk_row_frame, anchor=tk.NW,
-                                                                            text=element.Text, width=width,
-                                                                            variable=element.TKIntVar, bd=border_depth,
-                                                                            font=font,
-                                                                            command=element._CheckboxHandler)
-                else:
-                    element.TKCheckbutton = element.Widget = tk.Checkbutton(tk_row_frame, anchor=tk.NW,
+
+                element.TKCheckbutton = element.Widget = tk.Checkbutton(tk_row_frame, anchor=tk.NW,
                                                                             text=element.Text, width=width,
                                                                             variable=element.TKIntVar, bd=border_depth,
                                                                             font=font)
+                if element.ChangeSubmits:
+                    element.TKCheckbutton.configure(command=element._CheckboxHandler)
                 if element.Disabled:
                     element.TKCheckbutton.configure(state='disable')
                 if element.BackgroundColor is not None and element.BackgroundColor != COLOR_SYSTEM_DEFAULT:
@@ -14904,7 +15206,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKCheckbutton.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    element.TKCheckbutton.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element.TKCheckbutton.pack_forget()
                 if element.Tooltip is not None:
                     element.TooltipObject = ToolTip(element.TKCheckbutton, text=element.Tooltip,
                                                     timeout=DEFAULT_TOOLTIP_TIME)
@@ -14935,11 +15238,12 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                                                       orientation=direction, BarColor=bar_color,
                                                       border_width=element.BorderWidth, relief=element.Relief,
                                                       ttk_theme=toplevel_form.TtkTheme, key=element.Key, style_name=style_name)
+                element.Widget = element.TKProgressBar.TKProgressBarForReal
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKProgressBar.TKProgressBarForReal.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    element.TKProgressBar.TKProgressBarForReal.pack_forget()
-                element.Widget = element.TKProgressBar.TKProgressBarForReal
+                    element._pack_forget_save_settings(optional_widget=element.TKProgressBar.TKProgressBarForReal)
+                    # element.TKProgressBar.TKProgressBarForReal.pack_forget()
                 _add_right_click_menu_and_grab(element)
 
                 # -------------------------  RADIO placement element  ------------------------- #
@@ -14960,17 +15264,11 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 element.TKIntVar = RadVar  # store the RadVar in Radio object
                 if default_value:  # if this radio is the one selected, set RadVar to match
                     element.TKIntVar.set(value)
+                element.TKRadio = element.Widget = tk.Radiobutton(tk_row_frame, anchor=tk.NW, text=element.Text,
+                                                                  width=width, variable=element.TKIntVar, value=value,
+                                                                  bd=border_depth, font=font)
                 if element.ChangeSubmits:
-                    element.TKRadio = element.Widget = tk.Radiobutton(tk_row_frame, anchor=tk.NW, text=element.Text,
-                                                                      width=width,
-                                                                      variable=element.TKIntVar, value=value,
-                                                                      bd=border_depth, font=font,
-                                                                      command=element._RadioHandler)
-                else:
-                    element.TKRadio = element.Widget = tk.Radiobutton(tk_row_frame, anchor=tk.NW, text=element.Text,
-                                                                      width=width,
-                                                                      variable=element.TKIntVar, value=value,
-                                                                      bd=border_depth, font=font)
+                    element.TKRadio.configure(command=element._RadioHandler)
                 if not element.BackgroundColor in (None, COLOR_SYSTEM_DEFAULT):
                     element.TKRadio.configure(background=element.BackgroundColor)
                     element.TKRadio.configure(selectcolor=element.CircleBackgroundColor)
@@ -14989,7 +15287,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKRadio.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    element.TKRadio.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element.TKRadio.pack_forget()
                 if element.Tooltip is not None:
                     element.TooltipObject = ToolTip(element.TKRadio, text=element.Tooltip, timeout=DEFAULT_TOOLTIP_TIME)
                 _add_right_click_menu_and_grab(element)
@@ -15000,9 +15299,7 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 width, height = element_size
                 width = 0 if auto_size_text else element_size[0]
                 element.TKStringVar = tk.StringVar()
-                element.TKSpinBox = element.Widget = tk.Spinbox(tk_row_frame, values=element.Values,
-                                                                textvariable=element.TKStringVar,
-                                                                width=width, bd=border_depth)
+                element.TKSpinBox = element.Widget = tk.Spinbox(tk_row_frame, values=element.Values, textvariable=element.TKStringVar, width=width, bd=border_depth)
                 if element.DefaultValue is not None:
                     element.TKStringVar.set(element.DefaultValue)
                 element.TKSpinBox.configure(font=font)  # set wrap to width of widget
@@ -15013,7 +15310,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKSpinBox.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    element.TKSpinBox.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element.TKSpinBox.pack_forget()
                 if text_color is not None and text_color != COLOR_SYSTEM_DEFAULT:
                     element.TKSpinBox.configure(fg=text_color)
                 if element.ChangeSubmits:
@@ -15027,10 +15325,11 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                     element.TKSpinBox['state'] = 'disabled'
                 if element.Tooltip is not None:
                     element.TooltipObject = ToolTip(element.TKSpinBox, text=element.Tooltip, timeout=DEFAULT_TOOLTIP_TIME)
+                if element.BindReturnKey:
+                    element.TKSpinBox.bind('<Return>', element._SpinboxSelectHandler)
                 if theme_input_text_color() not in (COLOR_SYSTEM_DEFAULT, None):
                     element.Widget.config(insertbackground=theme_input_text_color())
                 _add_right_click_menu_and_grab(element)
-
                 # -------------------------  OUTPUT placement element  ------------------------- #
             elif element_type == ELEM_TYPE_OUTPUT:
                 element = element  # type: Output
@@ -15043,7 +15342,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element._TKOut.pack(side=tk.LEFT, expand=expand, fill=fill)
                 if element.visible is False:
-                    element._TKOut.frame.pack_forget()
+                    element._pack_forget_save_settings(optional_widget=element._TKOut.frame)
+                    # element._TKOut.frame.pack_forget()
                 if element.Tooltip is not None:
                     element.TooltipObject = ToolTip(element._TKOut, text=element.Tooltip, timeout=DEFAULT_TOOLTIP_TIME)
                 _add_right_click_menu_and_grab(element)
@@ -15069,14 +15369,15 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                                                 'Look in this Window\'s layout for an Image element that has a key of {}'.format(element.Key),
                                                 'The error occuring is:', e)
 
+                element.tktext_label = element.Widget = tk.Label(tk_row_frame, bd=0)
+
                 if photo is not None:
                     if element_size == (None, None) or element_size is None or element_size == toplevel_form.DefaultElementSize:
                         width, height = photo.width(), photo.height()
                     else:
                         width, height = element_size
-                    element.tktext_label = tk.Label(tk_row_frame, image=photo, width=width, height=height, bd=0)
-                else:
-                    element.tktext_label = tk.Label(tk_row_frame, bd=0)
+                    element.tktext_label.config(image=photo, width=width, height=height)
+
 
                 if not element.BackgroundColor in (None, COLOR_SYSTEM_DEFAULT):
                     element.tktext_label.config(background=element.BackgroundColor)
@@ -15087,13 +15388,13 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 element.tktext_label.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
 
                 if element.visible is False:
-                    element.tktext_label.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element.tktext_label.pack_forget()
                 if element.Tooltip is not None:
                     element.TooltipObject = ToolTip(element.tktext_label, text=element.Tooltip,
                                                     timeout=DEFAULT_TOOLTIP_TIME)
                 if element.EnableEvents and element.tktext_label is not None:
                     element.tktext_label.bind('<ButtonPress-1>', element._ClickHandler)
-                element.Widget = element.tktext_label
 
                 _add_right_click_menu_and_grab(element)
 
@@ -15105,16 +15406,18 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                     element._TKCanvas = tk.Canvas(tk_row_frame, width=width, height=height, bd=border_depth)
                 else:
                     element._TKCanvas.master = tk_row_frame
+                element.Widget = element._TKCanvas
+
                 if element.BackgroundColor is not None and element.BackgroundColor != COLOR_SYSTEM_DEFAULT:
                     element._TKCanvas.configure(background=element.BackgroundColor, highlightthickness=0)
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element._TKCanvas.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    element._TKCanvas.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element._TKCanvas.pack_forget()
                 if element.Tooltip is not None:
                     element.TooltipObject = ToolTip(element._TKCanvas, text=element.Tooltip,
                                                     timeout=DEFAULT_TOOLTIP_TIME)
-                element.Widget = element._TKCanvas
                 _add_right_click_menu_and_grab(element)
 
                 # -------------------------  Graph placement element  ------------------------- #
@@ -15136,8 +15439,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                     # element._TKCanvas.configure(background=element.BackgroundColor, highlightthickness=0)
                 element._TKCanvas2.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    # element._TKCanvas.pack_forget()
-                    element._TKCanvas2.pack_forget()
+                    element._pack_forget_save_settings()
+                    # element._TKCanvas2.pack_forget()
                 if element.Tooltip is not None:
                     element.TooltipObject = ToolTip(element._TKCanvas2, text=element.Tooltip,
                                                     timeout=DEFAULT_TOOLTIP_TIME)
@@ -15204,7 +15507,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                     labeled_frame.config(width=element.Size[0], height=element.Size[1])
                     labeled_frame.pack_propagate(0)
                 if not element.visible:
-                    labeled_frame.pack_forget()
+                    element._pack_forget_save_settings()
+                    # labeled_frame.pack_forget()
                 if element.BackgroundColor != COLOR_SYSTEM_DEFAULT and element.BackgroundColor is not None:
                     labeled_frame.configure(background=element.BackgroundColor,
                                             highlightbackground=element.BackgroundColor,
@@ -15351,17 +15655,7 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 else:
                     range_from = element.Range[0]
                     range_to = element.Range[1]
-                if element.ChangeSubmits:
-                    tkscale = element.Widget = tk.Scale(tk_row_frame, orient=element.Orientation,
-                                                        variable=element.TKIntVar,
-                                                        from_=range_from, to_=range_to, resolution=element.Resolution,
-                                                        length=slider_length, width=slider_width,
-                                                        bd=element.BorderWidth,
-                                                        relief=element.Relief, font=font,
-                                                        tickinterval=element.TickInterval,
-                                                        command=element._SliderChangedHandler)
-                else:
-                    tkscale = element.Widget = tk.Scale(tk_row_frame, orient=element.Orientation,
+                tkscale = element.Widget = tk.Scale(tk_row_frame, orient=element.Orientation,
                                                         variable=element.TKIntVar,
                                                         from_=range_from, to_=range_to, resolution=element.Resolution,
                                                         length=slider_length, width=slider_width,
@@ -15369,6 +15663,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                                                         relief=element.Relief, font=font,
                                                         tickinterval=element.TickInterval)
                 tkscale.config(highlightthickness=0)
+                if element.ChangeSubmits:
+                    tkscale.config(command=element._SliderChangedHandler)
                 if element.BackgroundColor is not None and element.BackgroundColor != COLOR_SYSTEM_DEFAULT:
                     tkscale.configure(background=element.BackgroundColor)
                 if element.TroughColor != COLOR_SYSTEM_DEFAULT:
@@ -15380,7 +15676,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 tkscale.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
                 if element.visible is False:
-                    tkscale.pack_forget()
+                    element._pack_forget_save_settings()
+                    # tkscale.pack_forget()
                 element.TKScale = tkscale
                 if element.Disabled == True:
                     element.TKScale['state'] = 'disabled'
@@ -15525,9 +15822,10 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
 
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKTreeview.pack(side=tk.LEFT, padx=0, pady=0, expand=expand, fill=fill)
-                if element.visible is False:
-                    element.TKTreeview.pack_forget()
                 frame.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
+                if element.visible is False:
+                    element._pack_forget_save_settings(optional_widget=element.element_frame)       # seems like it should be the frame if following other elements conventions
+                    # element.TKTreeview.pack_forget()
                 if element.Tooltip is not None:
                     element.TooltipObject = ToolTip(element.TKTreeview, text=element.Tooltip,
                                                     timeout=DEFAULT_TOOLTIP_TIME)
@@ -15656,9 +15954,10 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 treeview.configure(yscrollcommand=scrollbar.set)
                 expand, fill, row_should_expand, row_fill_direction = _add_expansion(element, row_should_expand, row_fill_direction)
                 element.TKTreeview.pack(side=tk.LEFT, padx=0, pady=0, expand=expand, fill=fill)
-                if element.visible is False:
-                    element.TKTreeview.pack_forget()
                 element_frame.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], expand=expand, fill=fill)
+                if element.visible is False:
+                    element._pack_forget_save_settings(optional_widget=element.element_frame)       # seems like it should be the frame if following other elements conventions
+                    # element.TKTreeview.pack_forget()
                 treeview.bind("<<TreeviewSelect>>", element._treeview_selected)
                 if element.Tooltip is not None:  # tooltip
                     element.TooltipObject = ToolTip(element.TKTreeview, text=element.Tooltip,
@@ -15758,7 +16057,8 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
                 tktext_label.pack(side=tk.LEFT, padx=elementpad[0], pady=elementpad[1], fill=tk.X, expand=True)
                 row_fill_direction = tk.X
                 if element.visible is False:
-                    tktext_label.pack_forget()
+                    element._pack_forget_save_settings()
+                    # tktext_label.pack_forget()
                 element.TKText = tktext_label
                 if element.ClickSubmits:
                     tktext_label.bind('<Button-1>', element._TextClickedHandler)
@@ -15806,6 +16106,26 @@ def PackFormIntoFrame(form, containing_frame, toplevel_form):
     return
 
 
+def _get_hidden_master_root():
+    """
+    Creates the hidden master root window.  This window is never visible and represents the overall "application"
+    """
+
+    # if one is already made, then skip making another
+    if Window.hidden_master_root is None:
+        Window._IncrementOpenCount()
+        Window.hidden_master_root = tk.Tk()
+        Window.hidden_master_root.attributes('-alpha', 0)  # HIDE this window really really really
+        # if not running_mac():
+        try:
+            Window.hidden_master_root.wm_overrideredirect(True)
+        except Exception as e:
+            if not running_mac():
+                print('* Error performing wm_overrideredirect while hiding the hidden master root*', e)
+        Window.hidden_master_root.withdraw()
+    return Window.hidden_master_root
+
+
 def _no_titlebar_setup(window):
     """
     Does the operations required to turn off the titlebar for the window.
@@ -15839,27 +16159,33 @@ def _convert_window_to_tk(window):
     :type window: (Window)
 
     """
-    master = window.TKroot
-    master.title(window.Title)
+    root = window.TKroot
+    root.title(window.Title)
     InitializeResults(window)
-
-    PackFormIntoFrame(window, master, window)
+    # Ubuntu 2022 hack... window manager stopped responding to Alpha of 0 during window creation
+    if running_linux():
+        root.withdraw()
+    PackFormIntoFrame(window, root, window)
 
     window.TKroot.configure(padx=window.Margins[0], pady=window.Margins[1])
 
     # ....................................... DONE creating and laying out window ..........................#
     if window._Size != (None, None):
-        master.geometry("%sx%s" % (window._Size[0], window._Size[1]))
-    screen_width = master.winfo_screenwidth()  # get window info to move to middle of screen
-    screen_height = master.winfo_screenheight()
+        root.geometry("%sx%s" % (window._Size[0], window._Size[1]))
+    screen_width = root.winfo_screenwidth()  # get window info to move to middle of screen
+    screen_height = root.winfo_screenheight()
     if window.Location != (None, None):
         x, y = window.Location
     elif DEFAULT_WINDOW_LOCATION != (None, None):
         x, y = DEFAULT_WINDOW_LOCATION
     else:
-        master.update_idletasks()  # don't forget to do updates or values are bad
-        win_width = master.winfo_width()
-        win_height = master.winfo_height()
+        root.update_idletasks()  # don't forget to do updates or values are bad
+        if running_linux():
+            root.deiconify()
+        win_width = root.winfo_width()
+        win_height = root.winfo_height()
+        if running_linux():
+            root.withdrawal()
         x = screen_width / 2 - win_width / 2
         y = screen_height / 2 - win_height / 2
         if y + win_height > screen_height:
@@ -15872,15 +16198,16 @@ def _convert_window_to_tk(window):
         y += window.RelativeLoction[1]
 
     move_string = '+%i+%i' % (int(x), int(y))
-    master.geometry(move_string)
+    root.geometry(move_string)
     window.config_last_location = (int(x), (int(y)))
     window.TKroot.x = int(x)
     window.TKroot.y = int(y)
     window.starting_window_position = (int(x), (int(y)))
-    master.update_idletasks()  # don't forget
-    master.geometry(move_string)
-    master.update_idletasks()  # don't forget
-
+    root.update_idletasks()  # don't forget
+    root.geometry(move_string)
+    root.update_idletasks()  # don't forget
+    if running_linux():
+        root.deiconify()
     _no_titlebar_setup(window)
 
     return
@@ -15906,22 +16233,10 @@ def StartupTK(window):
         root = tk.Tk()
     elif not ow and not window.ForceTopLevel:
         # if first window being created, make a throwaway, hidden master root.  This stops one user
-        # window from becoming the child of another user window. All windows are children of this
-        # hidden window
-        Window._IncrementOpenCount()
-        Window.hidden_master_root = tk.Tk()
-        Window.hidden_master_root.attributes('-alpha', 0)  # HIDE this window really really really
-        # if not running_mac():
-        try:
-            Window.hidden_master_root.wm_overrideredirect(True)
-        except Exception as e:
-            if not running_mac():
-                print('* Error performing wm_overrideredirect while hiding the hidden master root*', e)
-        Window.hidden_master_root.withdraw()
-        # root = tk.Toplevel(Window.hidden_master_root)     # This code caused problems when running with timeout=0 and closed with X
+        # window from becoming the child of another user window. All windows are children of this hidden window
+        _get_hidden_master_root()
         root = tk.Toplevel(class_=window.Title)
     else:
-        # root = tk.Toplevel(Window.hidden_master_root)     # This code caused problems when running with timeout=0 and closed with X
         root = tk.Toplevel(class_=window.Title)
     if window.DebuggerEnabled:
         root.bind('<Cancel>', window._callback_main_debugger_window_create_keystroke)
@@ -16204,20 +16519,20 @@ class QuickMeter(object):
         if self.orientation.lower().startswith('h'):
             col = []
             col += [[T(''.join(map(lambda x: str(x) + '\n', args)),
-                       key='_OPTMSG_')]]  ### convert all *args into one string that can be updated
-            col += [[T('', size=(30, 10), key='_STATS_')],
-                    [ProgressBar(max_value=self.max_value, orientation='h', key='_PROG_', size=self.size,
+                       key='-OPTMSG-')]]  ### convert all *args into one string that can be updated
+            col += [[T('', size=(30, 10), key='-STATS-')],
+                    [ProgressBar(max_value=self.max_value, orientation='h', key='-PROG-', size=self.size,
                                  bar_color=self.bar_color)]]
             if not self.no_button:
                 col += [[Cancel(button_color=self.button_color), Stretch()]]
             layout = [Column(col)]
         else:
-            col = [[ProgressBar(max_value=self.max_value, orientation='v', key='_PROG_', size=self.size,
+            col = [[ProgressBar(max_value=self.max_value, orientation='v', key='-PROG-', size=self.size,
                                 bar_color=self.bar_color)]]
             col2 = []
             col2 += [[T(''.join(map(lambda x: str(x) + '\n', args)),
-                        key='_OPTMSG_')]]  ### convert all *args into one string that can be updated
-            col2 += [[T('', size=(30, 10), key='_STATS_')]]
+                        key='-OPTMSG-')]]  ### convert all *args into one string that can be updated
+            col2 += [[T('', size=(30, 10), key='-STATS-')]]
             if not self.no_button:
                 col2 += [[Cancel(button_color=self.button_color), Stretch()]]
 
@@ -16231,9 +16546,9 @@ class QuickMeter(object):
 
         self.current_value = current_value
         self.max_value = max_value
-        self.window.Element('_PROG_').UpdateBar(self.current_value, self.max_value)
-        self.window.Element('_STATS_').Update('\n'.join(self.ComputeProgressStats()))
-        self.window.Element('_OPTMSG_').Update(
+        self.window.Element('-PROG-').UpdateBar(self.current_value, self.max_value)
+        self.window.Element('-STATS-').Update('\n'.join(self.ComputeProgressStats()))
+        self.window.Element('-OPTMSG-').Update(
             value=''.join(map(lambda x: str(x) + '\n', args)))  ###  update the string with the args
         event, values = self.window.read(timeout=0)
         if event in ('Cancel', None) or current_value >= max_value:
@@ -18144,14 +18459,10 @@ def clipboard_set(new_value):
     :param new_value: value to set the clipboard to. Will be converted to a string
     :type new_value:  (str | bytes)
     """
-    # Create and use a temp window
-    root = tk.Tk()
-    root.withdraw()
+    root = _get_hidden_master_root()
     root.clipboard_clear()
     root.clipboard_append(str(new_value))
     root.update()
-    root.destroy()
-
 
 def clipboard_get():
     """
@@ -18160,15 +18471,13 @@ def clipboard_get():
     :return: The current value of the clipboard
     :rtype:  (str)
     """
-    # Create and use a temp window
-    root = tk.Tk()
-    root.withdraw()
+    root = _get_hidden_master_root()
+
     try:
         value = root.clipboard_get()
     except:
         value = ''
     root.update()
-    root.destroy()
     return value
 
 
@@ -19123,21 +19432,7 @@ def popup_get_folder(message, title=None, default_path='', no_window=False, size
 
     # global _my_windows
     if no_window:
-        if not Window.hidden_master_root:
-            # if first window being created, make a throwaway, hidden master root.  This stops one user
-            # window from becoming the child of another user window. All windows are children of this
-            # hidden window
-            Window._IncrementOpenCount()
-            Window.hidden_master_root = tk.Tk()
-            Window.hidden_master_root.attributes('-alpha', 0)  # HIDE this window really really really
-
-            # if not running_mac():
-            try:
-                Window.hidden_master_root.wm_overrideredirect(True)
-            except Exception as e:
-                print('* Error performing wm_overrideredirect while hiding hidden master root in get folder *', e)
-
-            Window.hidden_master_root.withdraw()
+        _get_hidden_master_root()
         root = tk.Toplevel()
 
         try:
@@ -19296,19 +19591,7 @@ def popup_get_file(message, title=None, default_path='', default_extension='', s
     if icon is None:
         icon = Window._user_defined_icon or DEFAULT_BASE64_ICON
     if no_window:
-        if not Window.hidden_master_root:
-            # if first window being created, make a throwaway, hidden master root.  This stops one user
-            # window from becoming the child of another user window. All windows are children of this
-            # hidden window
-            Window._IncrementOpenCount()
-            Window.hidden_master_root = tk.Tk()
-            Window.hidden_master_root.attributes('-alpha', 0)  # HIDE this window really really really
-            # if not running_mac():
-            try:
-                Window.hidden_master_root.wm_overrideredirect(True)
-            except Exception as e:
-                print('* Error performing wm_overrideredirect in get file hiding the master root *', e)
-            Window.hidden_master_root.withdraw()
+        _get_hidden_master_root()
         root = tk.Toplevel()
 
         try:
@@ -19418,7 +19701,7 @@ def popup_get_file(message, title=None, default_path='', default_extension='', s
                     history_settings.set('-PSG file list-', list_of_entries)
             break
 
-    window.close();
+    window.close()
     del window
     if event in ('Cancel', WIN_CLOSED):
         return None
@@ -19480,12 +19763,12 @@ def popup_get_text(message, title=None, default_text='', password_char='', size=
     else:
         layout = [[]]
 
-    layout += [[Text(message, auto_size_text=True, text_color=text_color, background_color=background_color, font=font)],
-               [InputText(default_text=default_text, size=size, key='_INPUT_', password_char=password_char)],
+    layout += [[Text(message, auto_size_text=True, text_color=text_color, background_color=background_color)],
+               [InputText(default_text=default_text, size=size, key='-INPUT-', password_char=password_char)],
                [Button('Ok', size=(6, 1), bind_return_key=True), Button('Cancel', size=(6, 1))]]
 
     window = Window(title=title or message, layout=layout, icon=icon, auto_size_text=True, button_color=button_color, no_titlebar=no_titlebar,
-                    background_color=background_color, grab_anywhere=grab_anywhere, keep_on_top=keep_on_top, location=location, relative_location=relative_location, finalize=True, modal=modal)
+                    background_color=background_color, grab_anywhere=grab_anywhere, keep_on_top=keep_on_top, location=location, relative_location=relative_location, finalize=True, modal=modal, font=font)
 
     button, values = window.read()
     window.close()
@@ -19493,7 +19776,7 @@ def popup_get_text(message, title=None, default_text='', password_char='', size=
     if button != 'Ok':
         return None
     else:
-        path = values['_INPUT_']
+        path = values['-INPUT-']
         return path
 
 
@@ -21082,6 +21365,9 @@ def execute_get_results(subprocess_id, timeout=None):
             # will get an error if stdout and stderr are combined and attempt to read stderr
             # so ignore the error that would be generated
             pass
+        except subprocess.TimeoutExpired:
+            # a Timeout error is not actually an error that needs to be reported
+            pass
         except Exception as e:
             popup_error('Error in execute_get_results', e)
     return out_decoded, err_decoded
@@ -21368,17 +21654,17 @@ class _Debugger:
                            InVar('_VAR1_'),
                            InVar('_VAR2_'), ]
 
-        interactive_frame = [[T('>>> '), In(size=(83, 1), key='_REPL_',
+        interactive_frame = [[T('>>> '), In(size=(83, 1), key='-REPL-',
                                             tooltip='Type in any "expression" or "statement"\n and it will be disaplayed below.\nPress RETURN KEY instead of "Go"\nbutton for faster use'),
                               B('Go', bind_return_key=True, visible=True)],
-                             [Multiline(size=(93, 26), key='_OUTPUT_', autoscroll=True, do_not_clear=True)], ]
+                             [Multiline(size=(93, 26), key='-OUTPUT-', autoscroll=True, do_not_clear=True)], ]
 
-        autowatch_frame = [[Button('Choose Variables To Auto Watch', key='_LOCALS_'),
+        autowatch_frame = [[Button('Choose Variables To Auto Watch', key='-LOCALS-'),
                             Button('Clear All Auto Watches'),
-                            Button('Show All Variables', key='_SHOW_ALL_'),
-                            Button('Locals', key='_ALL_LOCALS_'),
-                            Button('Globals', key='_GLOBALS_'),
-                            Button('Popout', key='_POPOUT_')]]
+                            Button('Show All Variables', key='-SHOW_ALL-'),
+                            Button('Locals', key='-ALL_LOCALS-'),
+                            Button('Globals', key='-GLOBALS-'),
+                            Button('Popout', key='-POPOUT-')]]
 
         var_layout = []
         for i in range(NUM_AUTO_WATCH):
@@ -21435,11 +21721,11 @@ class _Debugger:
             self.watcher_window = None
             return False
         # ------------------------------- Process events from REPL Tab -------------------------------
-        cmd = values['_REPL_']  # get the REPL entered
+        cmd = values['-REPL-']  # get the REPL entered
         # BUTTON - GO (NOTE - This button is invisible!!)
         if event == 'Go':  # GO BUTTON
-            self.watcher_window.Element('_REPL_').Update('')
-            self.watcher_window.Element('_OUTPUT_').Update(">>> {}\n".format(cmd), append=True, autoscroll=True)
+            self.watcher_window.Element('-REPL-').Update('')
+            self.watcher_window.Element('-OUTPUT-').Update(">>> {}\n".format(cmd), append=True, autoscroll=True)
 
             try:
                 result = eval('{}'.format(cmd), myglobals, mylocals)
@@ -21452,7 +21738,7 @@ class _Debugger:
                     except Exception as e:
                         result = 'Exception {}\n'.format(e)
 
-            self.watcher_window.Element('_OUTPUT_').Update('{}\n'.format(result), append=True, autoscroll=True)
+            self.watcher_window.Element('-OUTPUT-').Update('{}\n'.format(result), append=True, autoscroll=True)
         # BUTTON - DETAIL
         elif event.endswith('_DETAIL_'):  # DETAIL BUTTON
             var = values['_VAR{}_'.format(event[4])]
@@ -21475,13 +21761,13 @@ class _Debugger:
             popup_scrolled(str(var) + '\n' + str(result), title=var, non_blocking=True, font=DEBUGGER_VARIABLE_DETAILS_FONT)
         # ------------------------------- Process Watch Tab -------------------------------
         # BUTTON - Choose Locals to see
-        elif event == '_LOCALS_':  # Show all locals BUTTON
+        elif event == '-LOCALS-':  # Show all locals BUTTON
             self._choose_auto_watches(mylocals)
         # BUTTON - Locals (quick popup)
-        elif event == '_ALL_LOCALS_':
+        elif event == '-ALL_LOCALS-':
             self._display_all_vars(mylocals)
         # BUTTON - Globals (quick popup)
-        elif event == '_GLOBALS_':
+        elif event == '-GLOBALS-':
             self._display_all_vars(myglobals)
         # BUTTON - clear all
         elif event == 'Clear All Auto Watches':
@@ -21489,11 +21775,11 @@ class _Debugger:
                 self.local_choices = {}
                 self.custom_watch = ''
         # BUTTON - Popout
-        elif event == '_POPOUT_':
+        elif event == '-POPOUT-':
             if not self.popout_window:
                 self._build_floating_window()
         # BUTTON - Show All
-        elif event == '_SHOW_ALL_':
+        elif event == '-SHOW_ALL-':
             for key in self.locals:
                 self.local_choices[key] = not key.startswith('_')
 
@@ -21515,7 +21801,7 @@ class _Debugger:
         # -------------------- Process the automatic "watch list" ------------------
         slot = 0
         for key in self.local_choices:
-            if key == '_CUSTOM_WATCH_':
+            if key == '-CUSTOM_WATCH-':
                 continue
             if self.local_choices[key]:
                 self.watcher_window.Element('_WATCH{}_'.format(slot)).Update(key)
@@ -21653,9 +21939,9 @@ class _Debugger:
             layout.append(line)
 
         layout += [
-            [Text('Custom Watch (any expression)'), Input(default_text=self.custom_watch, size=(40, 1), key='_CUSTOM_WATCH_')]]
+            [Text('Custom Watch (any expression)'), Input(default_text=self.custom_watch, size=(40, 1), key='-CUSTOM_WATCH-')]]
         layout += [
-            [Ok(), Cancel(), Button('Clear All'), Button('Select [almost] All', key='_AUTO_SELECT_')]]
+            [Ok(), Cancel(), Button('Clear All'), Button('Select [almost] All', key='-AUTO_SELECT-')]]
 
         window = Window('All Locals', layout, icon=PSG_DEBUGGER_LOGO, finalize=True)
 
@@ -21665,18 +21951,18 @@ class _Debugger:
                 break
             elif event == 'Ok':
                 self.local_choices = values
-                self.custom_watch = values['_CUSTOM_WATCH_']
+                self.custom_watch = values['-CUSTOM_WATCH-']
                 break
             elif event == 'Clear All':
                 popup_quick_message('Cleared Auto Watches', auto_close=True, auto_close_duration=3, non_blocking=True,
                                     text_color='red', font='ANY 18')
                 for key in sorted_dict:
                     window.Element(key).Update(False)
-                window.Element('_CUSTOM_WATCH_').Update('')
+                window.Element('-CUSTOM_WATCH-').Update('')
             elif event == 'Select All':
                 for key in sorted_dict:
                     window.Element(key).Update(False)
-            elif event == '_AUTO_SELECT_':
+            elif event == '-AUTO_SELECT-':
                 for key in sorted_dict:
                     window.Element(key).Update(not key.startswith('_'))
 
@@ -21881,18 +22167,37 @@ def _refresh_debugger():
         _Debugger.debugger = _Debugger()
     debugger = _Debugger.debugger
     Window._read_call_from_debugger = True
+    rc = None
     # frame = inspect.currentframe()
     # frame = inspect.currentframe().f_back
+
     frame, *others = inspect.stack()[1]
     try:
         debugger.locals = frame.f_back.f_locals
         debugger.globals = frame.f_back.f_globals
     finally:
         del frame
-    debugger._refresh_floating_window() if debugger.popout_window else None
-    rc = debugger._refresh_main_debugger_window(debugger.locals, debugger.globals) if debugger.watcher_window else False
+    if debugger.popout_window:
+        rc = debugger._refresh_floating_window()
+    if debugger.watcher_window:
+        rc = debugger._refresh_main_debugger_window(debugger.locals, debugger.globals)
     Window._read_call_from_debugger = False
     return rc
+
+
+def _debugger_window_is_open():
+    """
+    Determines if one of the debugger window is currently open
+    :return: returns True if the popout window or the main debug window is open
+    :rtype: (bool)
+    """
+
+    if _Debugger.debugger is None:
+        return False
+    debugger = _Debugger.debugger
+    if debugger.popout_window or debugger.watcher_window:
+        return True
+    return False
 
 
 def get_versions():
@@ -21998,6 +22303,10 @@ EMOJI_BASE64_ZIPPED_SHUT = b'iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAKQ2l
 
 EMOJI_BASE64_NO_HEAR = b'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UmVhZHlxyWU8AAADJmlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDUgNzkuMTYzNDk5LCAyMDE4LzA4LzEzLTE2OjQwOjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ0MgMjAxOSAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NDU0N0I2QUU3NjZBMTFFQ0JBMTJCNUY1RjE3MDA3QTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NDU0N0I2QUY3NjZBMTFFQ0JBMTJCNUY1RjE3MDA3QTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo0NTQ3QjZBQzc2NkExMUVDQkExMkI1RjVGMTcwMDdBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0NTQ3QjZBRDc2NkExMUVDQkExMkI1RjVGMTcwMDdBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PkaeQgQAABVrSURBVHja7FoJdFzldf7eNqtGI432xZJlLZZkA8YGb6wmGFyMISEkxCZtoTShTQiQQ5MGSA5pmnIIoQlNWNwcmgTXYXHK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'
 
+EMOJI_BASE64_MIKE = b'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'
+
+EMOJI_BASE64_SUPERHERO = b'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'
+
 
 EMOJI_BASE64_HAPPY_LIST = [EMOJI_BASE64_HAPPY_STARE, EMOJI_BASE64_HAPPY_LAUGH, EMOJI_BASE64_HAPPY_JOY, EMOJI_BASE64_HAPPY_IDEA, EMOJI_BASE64_HAPPY_GASP,
                            EMOJI_BASE64_HAPPY_RELIEF, EMOJI_BASE64_HAPPY_WINK, EMOJI_BASE64_HAPPY_THUMBS_UP, EMOJI_BASE64_HAPPY_HEARTS,
@@ -22065,6 +22374,8 @@ HEART_FLAT_BASE64 = b'iVBORw0KGgoAAAANSUhEUgAAAFoAAABaCAYAAAA4qEECAAAPjklEQVR4nO
 
 
 HEART_3D_BASE64 = b'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'
+
+PYTHON_COLORED_HEARTS_BASE64 = b'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'
 
 RED_X_BASE64 = b'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'
 
@@ -22136,7 +22447,7 @@ GREEN_CHECK_BASE64 = b'iVBORw0KGgoAAAANSUhEUgAAAFoAAABaCAYAAAA4qEECAAAJV0lEQVR4n
 def _github_issue_post_make_markdown(issue_type, operating_system, os_ver, psg_port, psg_ver, gui_ver, python_ver,
                                      python_exp, prog_exp, used_gui, gui_notes,
                                      cb_docs, cb_demos, cb_demo_port, cb_readme_other, cb_command_line, cb_issues, cb_github,
-                                     detailed_desc, code, project_details):
+                                     detailed_desc, code, project_details, where_found):
     body = \
 """
 ## Type of Issue (Enhancement, Error, Bug, Question)
@@ -22216,16 +22527,28 @@ These items may solve your problem. Please check those you've done by changing -
 #### Screenshot, Sketch, or Drawing
 
 
--------------------------
 
-{}
-
-
-    """.format(python_exp, prog_exp, used_gui, gui_notes,
+""".format(python_exp, prog_exp, used_gui, gui_notes,
                 cb_docs, cb_demos, cb_demo_port, cb_readme_other, cb_command_line, cb_issues, cb_github,
-                detailed_desc, code if len(code) > 10 else '# Paste your code here',
-               '## Watcha Makin?\n' + str(project_details) if project_details else '')
+                detailed_desc, code if len(code) > 10 else '# Paste your code here')
 
+
+    if project_details or where_found:
+        body2 +=  '------------------------'
+
+    if project_details:
+        body2 +=  \
+"""
+## Watcha Makin?
+{}
+""".format(str(project_details))
+
+    if where_found:
+        body2 += \
+"""
+## How did you find PySimpleGUI?
+{}
+""".format(str(where_found))
     return body + body2
 
 
@@ -22250,16 +22573,12 @@ def _github_issue_post_validate(values, checklist, issue_types):
         popup_error('Must choose issue type')
         return False
     if values['-OS WIN-']:
-        operating_system = 'Windows'
         os_ver = values['-OS WIN VER-']
     elif values['-OS LINUX-']:
-        operating_system = 'Linux'
         os_ver = values['-OS LINUX VER-']
     elif values['-OS MAC-']:
-        operating_system = 'Mac'
         os_ver = values['-OS MAC VER-']
     elif values['-OS OTHER-']:
-        operating_system = 'Other'
         os_ver = values['-OS OTHER VER-']
     else:
         popup_error('Must choose Operating System')
@@ -22399,7 +22718,7 @@ def main_open_github_issue():
                  ('For non tkinter - Looked at readme for your specific port if not PySimpleGUI (Qt, WX, Remi)', ''),
                  ('Run your program outside of your debugger (from a command line)', ''),
                  ('Searched through Issues (open and closed) to see if already reported', 'http://Issues.PySimpleGUI.org'),
-                 ('Tried using the PySimpleGUI.py file on GitHub. Your problem may have already been fixed vut not released.', ''))
+                 ('Tried using the PySimpleGUI.py file on GitHub. Your problem may have already been fixed but not released.', ''))
 
     checklist_col1 = Col([[CB(c, k=('-CB-', i)), T(t, k='-T{}-'.format(i), enable_events=True)] for i, (c, t) in enumerate(checklist[:4])], k='-C FRAME CBs1-')
     checklist_col2 = Col([[CB(c, k=('-CB-', i + 4)), T(t, k='-T{}-'.format(i + 4), enable_events=True)] for i, (c, t) in enumerate(checklist[4:])], pad=(0, 0),
@@ -22408,9 +22727,16 @@ def main_open_github_issue():
         [[Tab('Checklist 1 *', [[checklist_col1]], expand_x=True, expand_y=True), Tab('Checklist 2  *', [[checklist_col2]]), Tab('Experience', col_experience, k='-Tab Exp-', pad=(0, 0))]], expand_x=True, expand_y=True)
 
     frame_details = [[Multiline(size=(65, 10), font='Courier 10', k='-ML DETAILS-', expand_x=True, expand_y=True)]]
+
     tooltip_project_details = 'If you care to share a little about your project,\nthen by all means tell us what you are making!'
     frame_project_details = [[Multiline(size=(65, 10), font='Courier 10', k='-ML PROJECT DETAILS-', expand_x=True, expand_y=True, tooltip=tooltip_project_details)]]
-    frame_code = [[Multiline(size=(80, 10), font='Courier 8', k='-ML CODE-', expand_x=True, expand_y=True)]]
+
+    tooltip_where_find_psg = 'Where did you learn about PySimpleGUI?'
+    frame_where_you_found_psg = [[Multiline(size=(65, 10), font='Courier 10', k='-ML FOUND PSG-', expand_x=True, expand_y=True, tooltip=tooltip_where_find_psg)]]
+
+    tooltip_code = 'A short program that can be immediately run will considerably speed up getting you quality help.'
+    frame_code = [[Multiline(size=(80, 10), font='Courier 8', k='-ML CODE-', expand_x=True, expand_y=True, tooltip=tooltip_code)]]
+
     frame_markdown = [[Multiline(size=(80, 10), font='Courier 8', k='-ML MARKDOWN-', expand_x=True, expand_y=True)]]
 
     top_layout = [[Col([[Text('Open A GitHub Issue (* = Required Info)', font='_ 15')]], expand_x=True),
@@ -22429,10 +22755,11 @@ def main_open_github_issue():
         [HorizontalSeparator()],
         [T(SYMBOL_DOWN + ' If you need more room for details grab the dot and drag to expand', background_color='red', text_color='white')]]
 
-    bottom_layout = [[TabGroup([[Tab('Details *', frame_details, pad=(0, 0)),
-                                 Tab('SHORT Code to duplicate Program *', frame_code, pad=(0, 0)),
-                                 Tab('Your Project Details (optional)', frame_project_details, pad=(0, 0)),
-                                 Tab('Markdown Output', frame_markdown, pad=(0, 0)),
+    bottom_layout = [[TabGroup([[Tab('Details *\n', frame_details, pad=(0, 0)),
+                                 Tab('SHORT Program\nto duplicate problem *', frame_code, pad=(0, 0)),
+                                 Tab('Your Project Details\n(optional)', frame_project_details, pad=(0, 0)),
+                                 Tab('Where you found us?\n(optional)', frame_where_you_found_psg, pad=(0, 0)),
+                                 Tab('Markdown Output\n', frame_markdown, pad=(0, 0)),
                                  ]], k='-TABGROUP-', expand_x=True, expand_y=True),
                       ]]
 
@@ -22516,7 +22843,8 @@ def main_open_github_issue():
             cb_dict = {'cb_docs': checkboxes[0], 'cb_demos': checkboxes[1], 'cb_demo_port': checkboxes[2], 'cb_readme_other': checkboxes[3],
                        'cb_command_line': checkboxes[4], 'cb_issues': checkboxes[5], 'cb_github': checkboxes[6], 'detailed_desc': values['-ML DETAILS-'],
                        'code': values['-ML CODE-'],
-                       'project_details': values['-ML PROJECT DETAILS-'].rstrip()}
+                       'project_details': values['-ML PROJECT DETAILS-'].rstrip(),
+                       'where_found': values['-ML FOUND PSG-']}
 
             markdown = _github_issue_post_make_markdown(issue_type, operating_system, os_ver, 'tkinter', values['-VER PSG-'], values['-VER TK-'],
                                                         values['-VER PYTHON-'],
@@ -22804,13 +23132,6 @@ def main_get_debug_data(suppress_popup=False):
         PySimpleGUI filename: {}""".format(sys.version, tclversion_detailed, ver, __file__)
 
     clipboard_set(message)
-    # create a temp window so that the clipboard can be set
-    # root = tk.Tk()
-    # root.withdraw()
-    # root.clipboard_clear()
-    # root.clipboard_append(message)
-    # root.update()
-    # root.destroy()
 
     if not suppress_popup:
         popup_scrolled('*** Version information copied to your clipboard. Paste into your GitHub Issue. ***\n',
@@ -23227,15 +23548,15 @@ def _create_main_window():
         # [ProgressBar(100, bar_color=('red', 'green'), orientation='h')],
 
         [Listbox(['Listbox 1', 'Listbox 2', 'Listbox 3'], select_mode=SELECT_MODE_EXTENDED, size=(20, 5), no_scrollbar=True)],
-        [Combo(['Combo item %s' % i for i in range(5)], size=(20, 3), default_value='Combo item 2', key='_COMBO1_', )],
-        [Combo(['Combo item %s' % i for i in range(5)], size=(20, 3), font='Courier 20', default_value='Combo item 2', key='_COMBO2_', )],
-        # [Combo(['Combo item 1', 2,3,4], size=(20, 3), readonly=False, text_color='blue', background_color='red', key='_COMBO2_')],
+        [Combo(['Combo item %s' % i for i in range(5)], size=(20, 3), default_value='Combo item 2', key='-COMBO1-', )],
+        [Combo(['Combo item %s' % i for i in range(5)], size=(20, 3), font='Courier 20', default_value='Combo item 2', key='-COMBO2-', )],
+        # [Combo(['Combo item 1', 2,3,4], size=(20, 3), readonly=False, text_color='blue', background_color='red', key='-COMBO2-')],
         [Spin([1, 2, 3, 'a', 'b', 'c'], initial_value='a', size=(4, 3))],
     ]
 
     frame3 = [
-        [Checkbox('Checkbox1', True), Checkbox('Checkbox1')],
-        [Radio('Radio Button1', 1), Radio('Radio Button2', 1, default=True, tooltip='Radio 2')],
+        [Checkbox('Checkbox1', True, k='-CB1-'), Checkbox('Checkbox2', k='-CB2-')],
+        [Radio('Radio Button1', 1, key='-R1-'), Radio('Radio Button2', 1, default=True, key='-R2-', tooltip='Radio 2')],
         [T('', size=(1, 4))],
     ]
 
@@ -23248,11 +23569,11 @@ def _create_main_window():
     frame5 = [[
         Table(values=matrix, headings=matrix[0],
               auto_size_columns=False, display_row_numbers=True, change_submits=False, justification='right',
-              num_rows=10, alternating_row_color='lightblue', key='_table_',
+              num_rows=10, alternating_row_color='lightblue', key='-TABLE-',
               col_widths=[5, 5, 5, 5], size=(400, 200), ),
         T('  '),
         Tree(data=treedata, headings=['col1', 'col2', 'col3'], change_submits=True, auto_size_columns=True,
-             num_rows=10, col0_width=10, key='_TREE_', show_expanded=True, )],[VStretch()]]
+             num_rows=10, col0_width=10, key='-TREE-', show_expanded=True, )],[VStretch()]]
     frame7 = [[Image(EMOJI_BASE64_HAPPY_HEARTS, enable_events=True, k='-EMOJI-HEARTS-'), T('Do you'), Image(HEART_3D_BASE64, subsample=3, enable_events=True, k='-HEART-'), T('so far?')],
               [T('Want to be taught PySimpleGUI?  Then maybe the "Official PySimpleGUI Course" on Udemy is for you.')],
               [T('Coupon codes are sometimes around so check docs, announcements, easter eggs on this page, to see specials.')],
@@ -23287,7 +23608,7 @@ def _create_main_window():
     tab3 = Tab('Table &\nTree', [[Column(frame5, element_justification='l', vertical_alignment='t')]], tooltip='tab 3', title_color='red', k='-TAB TABLE-')
     tab4 = Tab('Sliders\n', [[Frame('Variable Choice Group', frame4, title_color='blue')]], tooltip='tab 4', title_color='red', k='-TAB VAR-')
     tab5 = Tab('Input\nMultiline', [[Frame('TextInput', frame1, title_color='blue')]], tooltip='tab 5', title_color='red', k='-TAB TEXT-')
-    tab6 = Tab('Master or\nSponsor', frame7, k='-TAB SPONSOR-')
+    tab6 = Tab('Course or\nSponsor', frame7, k='-TAB SPONSOR-')
     tab7 = Tab('Popups\n', pop_test_tab_layout, k='-TAB POPUP-')
     tab8 = Tab('Themes\n', themes_tab_layout, k='-TAB THEMES-')
     tab9 = Tab('Global\nSettings', global_settings_tab_layout, k='-TAB GlOBAL SETTINGS-')
@@ -23297,18 +23618,18 @@ def _create_main_window():
 
     layout_top = Column([
         [Image(EMOJI_BASE64_HAPPY_BIG_SMILE, enable_events=True, key='-LOGO-', tooltip='This is PySimpleGUI logo'),
-         Image(data=DEFAULT_BASE64_LOADING_GIF, enable_events=True, key='_IMAGE_'),
+         Image(data=DEFAULT_BASE64_LOADING_GIF, enable_events=True, key='-IMAGE-'),
          Text('PySimpleGUI Test Harness\nYou are running PySimpleGUI.py file instead of importing', font='ANY 15',
-              tooltip='My tooltip', key='_TEXT1_')],
+              tooltip='My tooltip', key='-TEXT1-')],
         VerLine(ver, 'PySimpleGUI Version') + [Image(HEART_3D_BASE64, subsample=4)],
         VerLine('{}/{}'.format(tkversion, tclversion), 'TK/TCL Versions'),
         VerLine(tclversion_detailed, 'detailed tkinter version'),
         VerLine(os.path.dirname(os.path.abspath(__file__)), 'PySimpleGUI Location', size=(40, 2)),
-        VerLine(sys.version, 'Python Version', size=(40, 2))], pad=(0, 0))
+        VerLine(sys.version, 'Python Version', size=(40,2)) +[Image(PYTHON_COLORED_HEARTS_BASE64, subsample=3)]], pad=0)
 
     layout_bottom = [
         [B(SYMBOL_DOWN, pad=(0, 0), k='-HIDE TABS-'),
-         pin(Col([[TabGroup([[tab1, tab2, tab3, tab6, tab4, tab5, tab7, tab8, tab9]], key='_TAB_GROUP_')]], k='-TAB GROUP-'))],
+         pin(Col([[TabGroup([[tab1, tab2, tab3, tab6, tab4, tab5, tab7, tab8, tab9]], key='-TAB_GROUP-')]], k='-TAB GROUP COL-'))],
         [B('Button', highlight_colors=('yellow', 'red'),pad=(1, 0)), B('Hide Stuff',pad=(1, 0), metadata='my metadata'),
          B('ttk Button', use_ttk_buttons=True, tooltip='This is a TTK Button',pad=(1, 0)),
          B('See-through Mode', tooltip='Make the background transparent',pad=(1, 0)),
@@ -23324,9 +23645,9 @@ def _create_main_window():
     layout = [[]]
 
     if not USE_CUSTOM_TITLEBAR:
-        layout += [[Menu(menu_def, key='_MENU_', font='Courier 15', background_color='red', text_color='white', disabled_text_color='yellow', tearoff=True)]]
+        layout += [[Menu(menu_def, key='-MENU-', font='Courier 15', background_color='red', text_color='white', disabled_text_color='yellow', tearoff=True)]]
     else:
-        layout += [[MenubarCustom(menu_def, key='_MENU_', font='Courier 15', bar_background_color=theme_background_color(), bar_text_color=theme_text_color(),
+        layout += [[MenubarCustom(menu_def, key='-MENU-', font='Courier 15', bar_background_color=theme_background_color(), bar_text_color=theme_text_color(),
                                   background_color='red', text_color='white', disabled_text_color='yellow')]]
 
     layout += [[layout_top] + [ProgressBar(max_value=800, size=(20, 25), orientation='v', key='+PROGRESS+')]]
@@ -23387,14 +23708,14 @@ def main():
             graph_elem.Move(-1, 0)
             graph_elem.DrawLine((i, 0), (i, random.randint(0, 300)), width=1, color='#{:06x}'.format(random.randint(0, 0xffffff)))
         window['+PROGRESS+'].UpdateBar(i % 800)
-        window.Element('_IMAGE_').UpdateAnimation(DEFAULT_BASE64_LOADING_GIF, time_between_frames=50)
+        window.Element('-IMAGE-').UpdateAnimation(DEFAULT_BASE64_LOADING_GIF, time_between_frames=50)
         i += 1
         if event == 'Button':
-            window.Element('_TEXT1_').SetTooltip('NEW TEXT')
-            window.Element('_MENU_').Update(visible=True)
+            window.Element('-TEXT1-').SetTooltip('NEW TEXT')
+            window.Element('-MENU-').Update(visible=True)
         elif event.startswith('Hide'):
             # window.Normal()
-            window.Element('_MENU_').Update(visible=False)
+            window.Element('-MENU-').Update(visible=False)
         elif event == 'Popout':
             show_debugger_popout_window()
         elif event == 'Launch Debugger':
@@ -23426,7 +23747,8 @@ def main():
                 # webbrowser.open_new_tab(r'https://udemy.com/PySimpleGUI')
                 webbrowser.open_new_tab(r'https://www.buymeacoffee.com/PySimpleGUI')
         elif event in  ('-EMOJI-HEARTS-', '-HEART-'):
-            popup_scrolled("Oh look!  It's a Udemy discsount coupon!", '2E43BB0C9E0997247E30')
+            popup_scrolled("Oh look!  It's a Udemy discount coupon!", 'BDC40CE5211BD258C767',
+                           'A personal message from Mike -- thank you so very much for supporting PySimpleGUI!', title='Udemy Coupon', image=EMOJI_BASE64_MIKE)
 
         elif event == 'Themes':
             search_string = popup_get_text('Enter a search term or leave blank for all themes', 'Show Available Themes', keep_on_top=True)
@@ -23440,9 +23762,9 @@ def main():
             window = _create_main_window()
             graph_elem = window['+GRAPH+']
         elif event == '-HIDE TABS-':
-            window['-TAB GROUP-'].update(visible=window['-TAB GROUP-'].metadata == True)
-            window['-TAB GROUP-'].metadata = not window['-TAB GROUP-'].metadata
-            window['-HIDE TABS-'].update(text=SYMBOL_UP if window['-TAB GROUP-'].metadata else SYMBOL_DOWN)
+            window['-TAB GROUP COL-'].update(visible=window['-TAB GROUP COL-'].metadata == True)
+            window['-TAB GROUP COL-'].metadata = not window['-TAB GROUP COL-'].metadata
+            window['-HIDE TABS-'].update(text=SYMBOL_UP if window['-TAB GROUP COL-'].metadata else SYMBOL_DOWN)
         elif event == 'SDK Reference':
             main_sdk_help()
         elif event == 'Global Settings':
@@ -23543,6 +23865,14 @@ if running_trinket():
 
 if tclversion_detailed.startswith('8.5'):
     warnings.warn('You are running a VERY old version of tkinter {}. You cannot use PNG formatted images for example.  Please upgrade to 8.6.x'.format(tclversion_detailed), UserWarning)
+
+# Enables the correct application icon to be shown on the Windows taskbar
+if running_windows():
+    try:
+        myappid = 'mycompany.myproduct.subproduct.version'  # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except Exception as e:
+        print('Error using the taskbar icon patch', e)
 
 _read_mac_global_settings()
 # if running_mac():

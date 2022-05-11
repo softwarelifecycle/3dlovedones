@@ -16,12 +16,12 @@ from process_raw import DngFile
 module_logger = logging.getLogger('3dModelApp.utilities')
 
 
-def cleanfolder(path):
+def cleanfolder(path, ext = "*.*"):
     """
     cleanup transfer directory either via menu option or when pics are taken.
     """
     trail = os.path.join(path, '')
-    for f in glob.glob(f"{trail}*.*"):
+    for f in glob.glob(f"{trail}{ext}"):
         os.remove(f)
 
 

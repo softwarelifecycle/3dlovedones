@@ -93,13 +93,12 @@ def snap(mcast_grp, mcast_port, window, max_cameras, cameraip='', exposure=90):
                 if result[0] == 'TAKEN':
                     module_logger.info(f'Pic Taken by {server[0]}')
 
-                if result[0] != 'TAKEN' and result[0] != "FINISHED":
-                    module_logger.info(f'{result[0]}')
-
                 if result[0] == 'FINISHED':
                     picname = result[1]
                     numcameras += 1
                     single_pic = len(cameraip) != 0
+
+                    #Inject event into window event loop and handle in main.py
                     window.write_event_value(Strings.EventList.PictureTaken,
                                                 (numcameras, server[0], f"{picname}", single_pic))
 
